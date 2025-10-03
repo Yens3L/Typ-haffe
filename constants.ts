@@ -1,4 +1,6 @@
-import { Level, LevelId } from "./types";
+import { Level, LevelId, TestDuration } from "./types";
+
+export const TEST_DURATIONS: TestDuration[] = [30, 60, 90, 0];
 
 export const LEVELS: Record<LevelId, Level> = {
   A1: {

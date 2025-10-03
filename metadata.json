@@ -1,5 +1,5 @@
 {
-  "name": "Typ-Affe: German Typing Practice",
-  "description": "A TypeMonkey-style web application to help you practice and improve your German vocabulary typing speed and accuracy. Type the words as they appear on the screen before the timer runs out!",
+  "name": "Typ-Affe: German Typing Test",
+  "description": "A Monkeytype-inspired web application to test and improve your German typing speed and accuracy. Choose a level and duration, and see your WPM and accuracy in real-time!",
   "requestFramePermissions": []
 }

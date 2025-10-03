@@ -10,3 +10,12 @@ export interface Level {
   name: string;
   phrases: string[];
 }
+
+export type TestDuration = 0 | 30 | 60 | 90;
+
+export interface TestStats {
+  wpm: number;
+  accuracy: number;
+  correctChars: number;
+  incorrectChars: number;
+}

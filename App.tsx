@@ -1,20 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { GameState, LevelId } from './types';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { GameState, LevelId, TestDuration, TestStats } from './types';
 import { LEVELS } from './constants';
 import WordDisplay from './components/WordDisplay';
 import GameOverlay from './components/GameOverlay';
+import GameUI from './components/GameUI';
 
-// Fisher-Yates shuffle algorithm
 const shuffle = <T,>(array: T[]): T[] => {
-  let currentIndex = array.length, randomIndex;
+  let currentIndex = array.length;
   const newArray = [...array];
-
   while (currentIndex !== 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
+    const randomIndex = Math.floor(Math.random() * currentIndex);
     currentIndex--;
     [newArray[currentIndex], newArray[randomIndex]] = [newArray[randomIndex], newArray[currentIndex]];
   }
-
   return newArray;
 };
 
@@ -23,97 +21,143 @@ const App: React.FC = () => {
   const [words, setWords] = useState<string[]>([]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [userInput, setUserInput] = useState('');
+  
   const [currentLevelId, setCurrentLevelId] = useState<LevelId>('A1');
+  const [testDuration, setTestDuration] = useState<TestDuration>(30);
+  const [timeLeft, setTimeLeft] = useState(testDuration);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  
+  const [stats, setStats] = useState<TestStats>({ wpm: 0, accuracy: 100, correctChars: 0, incorrectChars: 0 });
+  const [finalStats, setFinalStats] = useState<TestStats | null>(null);
 
-  const currentWord = words[currentWordIndex] || '';
+  const timerRef = useRef<number | null>(null);
+  const isInfiniteMode = testDuration === 0;
 
   const startGame = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    
     setGameState(GameState.Playing);
     setUserInput('');
-    const phrasesForLevel = LEVELS[currentLevelId].phrases;
-    const shuffledPhrases = shuffle(phrasesForLevel);
-    setWords(shuffledPhrases);
+    
+    const phrasesForLevel = shuffle(LEVELS[currentLevelId].phrases);
+    const repeatedPhrases = Array(20).fill(phrasesForLevel).flat();
+    setWords(shuffle(repeatedPhrases));
+    
     setCurrentWordIndex(0);
-  }, [currentLevelId]);
+    setTimeLeft(testDuration);
+    setElapsedTime(0);
+    setStats({ wpm: 0, accuracy: 100, correctChars: 0, incorrectChars: 0 });
+    setFinalStats(null);
+    
+    timerRef.current = window.setInterval(() => {
+      setTimeLeft(prev => (isInfiniteMode ? prev : prev - 1));
+      setElapsedTime(prev => prev + 1);
+    }, 1000);
+  }, [currentLevelId, testDuration, isInfiniteMode]);
+
+  const restartGame = useCallback(() => {
+     if (timerRef.current) clearInterval(timerRef.current);
+     setGameState(GameState.Ready);
+     setUserInput('');
+     setTimeLeft(testDuration);
+     setElapsedTime(0);
+  }, [testDuration]);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (gameState !== GameState.Playing) return;
-
-      if (e.key === ' ' || e.key === 'Backspace') {
-        e.preventDefault();
-      }
-      
-      if (e.key === 'Backspace') {
-        setUserInput(prev => prev.slice(0, -1));
-      } else if (e.key.length === 1 && e.key.match(/^[a-zA-ZäöüÄÖÜß ]$/)) {
-        setUserInput(prev => prev + e.key);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameState]);
+    if (!isInfiniteMode && timeLeft <= 0 && gameState === GameState.Playing) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setGameState(GameState.Finished);
+      setFinalStats(stats);
+    }
+  }, [timeLeft, gameState, stats, isInfiniteMode]);
   
   useEffect(() => {
     if (gameState !== GameState.Playing) return;
 
-    if (currentWord && userInput === currentWord) {
-      // If it's the last word, reshuffle the list for endless practice
-      if (currentWordIndex === words.length - 1) {
-        const newShuffled = shuffle(LEVELS[currentLevelId].phrases);
-        setWords(newShuffled);
-        setCurrentWordIndex(0);
-      } else {
-        setCurrentWordIndex(prev => prev + 1);
-      }
-      setUserInput('');
-    }
-  }, [userInput, currentWord, gameState, currentWordIndex, words.length, currentLevelId]);
+    const totalChars = stats.correctChars + stats.incorrectChars;
+    const accuracy = totalChars > 0 ? Math.round((stats.correctChars / totalChars) * 100) : 100;
+    
+    const wpm = elapsedTime > 0 ? Math.round((stats.correctChars / 5) / (elapsedTime / 60)) : 0;
 
-  const handleSpeak = useCallback(() => {
-    if (!currentWord || window.speechSynthesis.speaking) return;
-    const utterance = new SpeechSynthesisUtterance(currentWord);
-    utterance.lang = 'de-DE';
-    window.speechSynthesis.speak(utterance);
-  }, [currentWord]);
+    setStats(prev => ({ ...prev, accuracy, wpm }));
+
+  }, [stats.correctChars, stats.incorrectChars, elapsedTime, gameState]);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (gameState !== GameState.Playing) return;
+
+    if (e.key === ' ' || e.key === 'Backspace') {
+      e.preventDefault();
+    }
+    
+    const currentWord = words[currentWordIndex];
+    
+    if (e.key === ' ') {
+      if (!userInput) return;
+      
+      const isCorrect = userInput.trim() === currentWord;
+      if (isCorrect) {
+        setStats(prev => ({...prev, correctChars: prev.correctChars + 1})); // for the space
+      }
+      
+      setCurrentWordIndex(prev => prev + 1);
+      setUserInput('');
+      return;
+    }
+
+    if (e.key === 'Backspace') {
+      setUserInput(prev => prev.slice(0, -1));
+    } else if (e.key.length === 1 && e.key.match(/^[a-zA-ZäöüÄÖÜß.,!?"' ]$/)) {
+        const newUserInput = userInput + e.key;
+        setUserInput(newUserInput);
+        
+        const isCorrect = currentWord[newUserInput.length - 1] === e.key;
+        if (isCorrect) {
+            setStats(prev => ({...prev, correctChars: prev.correctChars + 1}));
+        } else {
+            setStats(prev => ({...prev, incorrectChars: prev.incorrectChars + 1}));
+        }
+    }
+  }, [gameState, userInput, words, currentWordIndex]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  const timeForUI = isInfiniteMode ? elapsedTime : timeLeft;
 
   return (
     <main className="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 selection:bg-yellow-500/50">
       <div className="relative w-full max-w-4xl flex flex-col items-center justify-center">
-        <header className="mb-12 text-center">
+        <header className="mb-8 text-center">
           <h1 className="text-5xl md:text-6xl font-bold font-orbitron text-yellow-300 tracking-wider">
             Typ-Affe
           </h1>
-          <p className="text-cyan-300/80 mt-2 text-lg">German Vocabulary Typing Practice</p>
         </header>
 
-        <div className="w-full max-w-3xl min-h-[12rem] flex flex-col items-center justify-center">
+        {gameState === GameState.Playing && (
+            <GameUI time={timeForUI} isInfiniteMode={isInfiniteMode} wpm={stats.wpm} accuracy={stats.accuracy} onRestart={restartGame} />
+        )}
+        
+        <div className="w-full max-w-3xl min-h-[10rem] flex flex-col items-center justify-center">
           {gameState === GameState.Playing ? (
-            <div className="w-full flex items-center justify-center px-2 relative group">
-              <WordDisplay word={currentWord} userInput={userInput} />
-              <button 
-                onClick={handleSpeak}
-                aria-label="Wort vorlesen"
-                className="absolute right-0 -top-10 text-slate-500 hover:text-cyan-300 transition-colors duration-200 opacity-20 group-hover:opacity-100 focus:opacity-100"
-                disabled={!currentWord}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                </svg>
-              </button>
-            </div>
+            <WordDisplay words={words} currentWordIndex={currentWordIndex} userInput={userInput} />
           ) : (
-             <div className="text-slate-500 text-2xl">Wähle ein Level um zu beginnen</div>
+             <div className="text-slate-500 text-2xl h-36 flex items-center">Konfiguriere deinen Test, um zu beginnen</div>
           )}
         </div>
         
-        {gameState === GameState.Ready && (
+        {(gameState === GameState.Ready || gameState === GameState.Finished) && (
           <GameOverlay 
+            gameState={gameState}
             onStart={startGame}
             levels={LEVELS}
             selectedLevel={currentLevelId}
             onLevelSelect={setCurrentLevelId}
+            selectedDuration={testDuration}
+            onDurationSelect={setTestDuration}
+            stats={finalStats}
           />
         )}
       </div>
