@@ -5,7 +5,10 @@ import WordDisplay from './components/WordDisplay';
 import GameOverlay from './components/GameOverlay';
 import GameUI from './components/GameUI';
 
-const shuffle = <T,>(array: T[]): T[] => {
+// FIX: Converted from a const arrow function to a function declaration
+// to avoid JSX parsing ambiguity with the generic type parameter <T>. This
+// resolves the cascade of parsing errors throughout the component.
+function shuffle<T>(array: T[]): T[] {
   let currentIndex = array.length;
   const newArray = [...array];
   while (currentIndex !== 0) {
@@ -14,7 +17,7 @@ const shuffle = <T,>(array: T[]): T[] => {
     [newArray[currentIndex], newArray[randomIndex]] = [newArray[randomIndex], newArray[currentIndex]];
   }
   return newArray;
-};
+}
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(GameState.Ready);
@@ -39,9 +42,14 @@ const App: React.FC = () => {
     setGameState(GameState.Playing);
     setUserInput('');
     
-    const phrasesForLevel = shuffle(LEVELS[currentLevelId].phrases);
-    const repeatedPhrases = Array(20).fill(phrasesForLevel).flat();
-    setWords(shuffle(repeatedPhrases));
+    const phrasesForLevel = LEVELS[currentLevelId].phrases;
+    const baseWords = phrasesForLevel.flatMap(p => p.split(' ')).filter(Boolean);
+    // Create a long list of words to ensure the test can run for any duration without running out.
+    let wordPool: string[] = [];
+    while (wordPool.length < 500) {
+      wordPool.push(...shuffle(baseWords));
+    }
+    setWords(wordPool.slice(0, 500));
     
     setCurrentWordIndex(0);
     setTimeLeft(testDuration);
@@ -84,7 +92,7 @@ const App: React.FC = () => {
   }, [stats.correctChars, stats.incorrectChars, elapsedTime, gameState]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (gameState !== GameState.Playing) return;
+    if (gameState !== GameState.Playing || words.length === 0) return;
 
     if (e.key === ' ' || e.key === 'Backspace') {
       e.preventDefault();
@@ -95,9 +103,15 @@ const App: React.FC = () => {
     if (e.key === ' ') {
       if (!userInput) return;
       
-      const isCorrect = userInput.trim() === currentWord;
-      if (isCorrect) {
-        setStats(prev => ({...prev, correctChars: prev.correctChars + 1})); // for the space
+      // Account for any characters the user missed by skipping the word early.
+      const missedChars = Math.max(0, currentWord.length - userInput.length);
+      if (missedChars > 0) {
+        setStats(prev => ({...prev, incorrectChars: prev.incorrectChars + missedChars }));
+      }
+      
+      // The space is only counted as a correct character if the word was typed perfectly.
+      if (userInput === currentWord) {
+        setStats(prev => ({...prev, correctChars: prev.correctChars + 1}));
       }
       
       setCurrentWordIndex(prev => prev + 1);
@@ -106,6 +120,21 @@ const App: React.FC = () => {
     }
 
     if (e.key === 'Backspace') {
+      if (userInput.length > 0) {
+        const lastCharIndex = userInput.length - 1;
+        const wasExtra = lastCharIndex >= currentWord.length;
+
+        if (wasExtra) {
+          setStats(prev => ({ ...prev, incorrectChars: prev.incorrectChars - 1 }));
+        } else {
+          const wasCorrect = userInput[lastCharIndex] === currentWord[lastCharIndex];
+          if (wasCorrect) {
+            setStats(prev => ({ ...prev, correctChars: prev.correctChars - 1 }));
+          } else {
+            setStats(prev => ({ ...prev, incorrectChars: prev.incorrectChars - 1 }));
+          }
+        }
+      }
       setUserInput(prev => prev.slice(0, -1));
     } else if (e.key.length === 1 && e.key.match(/^[a-zA-ZäöüÄÖÜß.,!?"' ]$/)) {
         const newUserInput = userInput + e.key;
@@ -118,7 +147,7 @@ const App: React.FC = () => {
             setStats(prev => ({...prev, incorrectChars: prev.incorrectChars + 1}));
         }
     }
-  }, [gameState, userInput, words, currentWordIndex]);
+  }, [gameState, userInput, words, currentWordIndex, stats.correctChars, stats.incorrectChars]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
