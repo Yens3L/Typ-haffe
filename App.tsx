@@ -4,9 +4,19 @@ import { LEVELS, TEST_DURATIONS } from './constants';
 import WordDisplay from './components/WordDisplay';
 import GameOverlay from './components/GameOverlay';
 import GameUI from './components/GameUI';
+import Header from './components/Header';
 import { GoogleGenAI, Type } from "@google/genai";
 
 const PHRASE_COUNT = 25;
+
+const SENTENCE_COLORS = [
+  'text-indigo-300',
+  'text-rose-300',
+  'text-teal-300',
+  'text-amber-300',
+  'text-purple-300',
+  'text-lime-300',
+];
 
 function shuffle<T>(array: T[]): T[] {
   let currentIndex = array.length;
@@ -65,6 +75,7 @@ const App: React.FC = () => {
   const [isSentenceTransitioning, setIsSentenceTransitioning] = useState(false);
 
   const timerRef = useRef<number | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const isInfiniteMode = testDuration === 0;
 
   useEffect(() => {
@@ -161,7 +172,6 @@ const App: React.FC = () => {
     setActivePhrases(shuffledPhrases);
 
     const newWordSentenceMap: number[] = [];
-    // FIX: Explicitly type the 'phrase' parameter to resolve TypeScript inference issue.
     const allWords = shuffledPhrases.flatMap((phrase: GeneratedPhrase, sentenceIndex) => {
         const sentenceWords = phrase.german.split(' ').filter(Boolean);
         sentenceWords.forEach(() => newWordSentenceMap.push(sentenceIndex));
@@ -184,6 +194,8 @@ const App: React.FC = () => {
       setTimeLeft(prev => (isInfiniteMode ? prev : prev - 1));
       setElapsedTime(prev => prev + 1);
     }, 1000);
+    
+    setTimeout(() => inputRef.current?.focus(), 100);
   }, [levelPhrases, testDuration, isInfiniteMode]);
 
   const restartGame = useCallback(() => {
@@ -198,6 +210,18 @@ const App: React.FC = () => {
      setWordHistory([]);
      setDifficultWords([]);
   }, [testDuration]);
+
+  const toggleFullScreen = () => {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+  };
 
   useEffect(() => {
     if (!isInfiniteMode && timeLeft <= 0 && gameState === GameState.Playing) {
@@ -231,73 +255,70 @@ const App: React.FC = () => {
 
   }, [stats.correctChars, stats.incorrectChars, elapsedTime, gameState]);
 
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (gameState !== GameState.Playing || words.length === 0) return;
 
-    if (e.key === ' ' || e.key === 'Backspace') {
-      e.preventDefault();
-    }
-    
+    const newValue = e.target.value;
     const currentWord = words[currentWordIndex];
-    
-    if (e.key === ' ') {
-      if (!userInput) return;
-      setCurrentTranslation(null);
 
-      const entry: WordHistoryEntry = { word: currentWord, typed: userInput };
-      setWordHistory(prev => [...prev, entry]);
-      
-      const missedChars = Math.max(0, currentWord.length - userInput.length);
-      if (missedChars > 0) {
-        setStats(prev => ({...prev, incorrectChars: prev.incorrectChars + missedChars }));
-      }
-      
-      if (userInput === currentWord) {
-        setStats(prev => ({...prev, correctChars: prev.correctChars + 1}));
-      }
-      
-      const isLastWordOfSentence = wordSentenceMap.length > 0 &&
+    if (newValue.endsWith(' ')) {
+        const typedWord = userInput; 
+        if (!typedWord) return;
+        
+        setCurrentTranslation(null);
+
+        const entry: WordHistoryEntry = { word: currentWord, typed: typedWord };
+        setWordHistory(prev => [...prev, entry]);
+        
+        const missedChars = Math.max(0, currentWord.length - typedWord.length);
+        if (missedChars > 0) {
+            setStats(prev => ({...prev, incorrectChars: prev.incorrectChars + missedChars }));
+        }
+        
+        if (typedWord === currentWord) {
+            setStats(prev => ({...prev, correctChars: prev.correctChars + 1}));
+        }
+        
+        const isLastWordOfSentence = wordSentenceMap.length > 0 &&
                                  currentWordIndex < words.length - 1 &&
                                  wordSentenceMap[currentWordIndex] !== wordSentenceMap[currentWordIndex + 1];
       
-      if (isLastWordOfSentence) {
-        setIsSentenceTransitioning(true);
-        setTimeout(() => setIsSentenceTransitioning(false), 400);
-      }
+        if (isLastWordOfSentence) {
+            setIsSentenceTransitioning(true);
+            setTimeout(() => setIsSentenceTransitioning(false), 600);
+        }
 
-      setCurrentWordIndex(prev => prev + 1);
-      setUserInput('');
-      return;
+        setCurrentWordIndex(prev => prev + 1);
+        setUserInput('');
+        return;
     }
 
-    if (e.key === 'Backspace') {
-      if (userInput.length > 0) {
-        const lastCharIndex = userInput.length - 1;
-        const wasExtra = lastCharIndex >= currentWord.length;
-
-        if (wasExtra) {
-          setStats(prev => ({ ...prev, incorrectChars: prev.incorrectChars - 1 }));
-        } else {
-          const wasCorrect = userInput[lastCharIndex] === currentWord[lastCharIndex];
-          if (wasCorrect) {
-            setStats(prev => ({ ...prev, correctChars: prev.correctChars - 1 }));
-          } else {
-            setStats(prev => ({ ...prev, incorrectChars: prev.incorrectChars - 1 }));
-          }
-        }
-      }
-      setUserInput(prev => prev.slice(0, -1));
-    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        const newUserInput = userInput + e.key;
-        setUserInput(newUserInput);
-        
-        const isCorrect = currentWord[newUserInput.length - 1] === e.key;
+    if (newValue.length > userInput.length) {
+        const addedChar = newValue[newValue.length - 1];
+        const isCorrect = currentWord[newValue.length - 1] === addedChar;
         if (isCorrect) {
             setStats(prev => ({...prev, correctChars: prev.correctChars + 1}));
         } else {
             setStats(prev => ({...prev, incorrectChars: prev.incorrectChars + 1}));
         }
     }
+    else if (newValue.length < userInput.length) {
+        const lastCharIndex = userInput.length - 1;
+        const wasExtra = lastCharIndex >= currentWord.length;
+
+        if (wasExtra) {
+            setStats(prev => ({ ...prev, incorrectChars: prev.incorrectChars - 1 }));
+        } else {
+            const wasCorrect = userInput[lastCharIndex] === currentWord[lastCharIndex];
+            if (wasCorrect) {
+                setStats(prev => ({ ...prev, correctChars: prev.correctChars - 1 }));
+            } else {
+                setStats(prev => ({ ...prev, incorrectChars: prev.incorrectChars - 1 }));
+            }
+        }
+    }
+    
+    setUserInput(newValue);
   }, [gameState, userInput, words, currentWordIndex, wordSentenceMap]);
 
   const handleTTS = useCallback(() => {
@@ -321,26 +342,16 @@ const App: React.FC = () => {
     }
   }, [gameState, currentWordIndex, wordSentenceMap, activePhrases]);
 
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
-
   const timeForUI = isInfiniteMode ? elapsedTime : timeLeft;
   const isTranslationAvailable = levelPhrases.length > 0 && !!levelPhrases[0].spanish;
 
   return (
-    <main className="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 selection:bg-yellow-500/50">
-      <div className="relative w-full max-w-4xl flex flex-col items-center justify-center">
-        <header className="mb-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold font-orbitron text-yellow-300 tracking-wider">
-            Typ-Affe
-          </h1>
-        </header>
+    <main className="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 selection:bg-yellow-500/50">
+      <Header onRestart={restartGame} onFullScreen={toggleFullScreen} />
+      <div className="relative w-full flex flex-col items-center justify-center pt-16">
 
         {apiError && (
-          <div className="bg-amber-500/10 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-lg relative max-w-3xl w-full text-center mb-4" role="alert">
+          <div className="bg-amber-500/10 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-lg relative w-full text-center mb-4" role="alert">
             <span className="block sm:inline">{apiError}</span>
             <button 
                 onClick={() => setApiError(null)} 
@@ -351,36 +362,59 @@ const App: React.FC = () => {
             </button>
           </div>
         )}
-
+        
         {gameState === GameState.Playing && (
-            <GameUI 
-              time={timeForUI} 
-              isInfiniteMode={isInfiniteMode} 
-              wpm={stats.wpm} 
-              accuracy={stats.accuracy} 
-              onRestart={restartGame}
-              onTTS={handleTTS}
-              onTranslate={handleTranslate}
-              isTranslationAvailable={isTranslationAvailable}
-            />
+            <>
+                <h1 className="text-5xl md:text-6xl font-bold font-orbitron text-yellow-300 tracking-wider mb-8">
+                    Typ-Affe
+                </h1>
+                <GameUI 
+                    time={timeForUI} 
+                    isInfiniteMode={isInfiniteMode} 
+                    wpm={stats.wpm} 
+                    accuracy={stats.accuracy} 
+                    onTTS={handleTTS}
+                    onTranslate={handleTranslate}
+                    isTranslationAvailable={isTranslationAvailable}
+                />
+            </>
         )}
         
-        <div className="w-full max-w-3xl min-h-[10rem] flex flex-col items-center justify-center">
+        <div 
+          className="relative w-full min-h-[10rem] flex flex-col items-center justify-center cursor-text px-4"
+          onClick={() => inputRef.current?.focus()}
+          aria-label="Typing area, click to focus"
+        >
           {gameState === GameState.Playing ? (
             <WordDisplay 
               words={words} 
               currentWordIndex={currentWordIndex} 
               userInput={userInput}
-              wordSentenceMap={wordSentenceMap}
               isSentenceTransitioning={isSentenceTransitioning}
+              wordSentenceMap={wordSentenceMap}
+              sentenceColors={SENTENCE_COLORS}
             />
           ) : (
-             <div className="text-slate-500 text-2xl h-36 flex items-center">Konfiguriere deinen Test, um zu beginnen</div>
+             <div className="text-slate-500 text-2xl min-h-36 flex items-center">Konfiguriere deinen Test, um zu beginnen</div>
           )}
+          
+          <input
+              ref={inputRef}
+              type="text"
+              className="absolute inset-0 w-full h-full bg-transparent border-none outline-none p-0 text-transparent caret-transparent cursor-text"
+              value={userInput}
+              onChange={handleInputChange}
+              disabled={gameState !== GameState.Playing}
+              autoFocus
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+          />
         </div>
-        
+
         {currentTranslation && gameState === GameState.Playing && (
-            <div className="mt-4 p-4 bg-slate-800 rounded-lg max-w-3xl w-full text-center relative border border-slate-700">
+            <div className="mt-4 p-4 bg-slate-800 rounded-lg w-full text-center relative border border-slate-700">
                 <p className="text-cyan-300 text-lg italic pr-8">{currentTranslation}</p>
                 <button 
                     onClick={() => setCurrentTranslation(null)} 
