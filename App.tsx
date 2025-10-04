@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, LevelId, TestDuration, TestStats } from './types';
+import { GameState, LevelId, TestDuration, TestStats, GeneratedPhrase } from './types';
 import { LEVELS } from './constants';
 import WordDisplay from './components/WordDisplay';
 import GameOverlay from './components/GameOverlay';
 import GameUI from './components/GameUI';
+import { GoogleGenAI, Type } from "@google/genai";
 
-// FIX: Converted from a const arrow function to a function declaration
-// to avoid JSX parsing ambiguity with the generic type parameter <T>. This
-// resolves the cascade of parsing errors throughout the component.
+const PHRASE_COUNT = 25;
+
 function shuffle<T>(array: T[]): T[] {
   let currentIndex = array.length;
   const newArray = [...array];
@@ -33,23 +33,83 @@ const App: React.FC = () => {
   const [stats, setStats] = useState<TestStats>({ wpm: 0, accuracy: 100, correctChars: 0, incorrectChars: 0 });
   const [finalStats, setFinalStats] = useState<TestStats | null>(null);
 
+  const [isGenerating, setIsGenerating] = useState(true);
+  const [levelPhrases, setLevelPhrases] = useState<GeneratedPhrase[]>([]);
+  const [activePhrases, setActivePhrases] = useState<GeneratedPhrase[]>([]);
+  const [wordSentenceMap, setWordSentenceMap] = useState<number[]>([]);
+  const [currentTranslation, setCurrentTranslation] = useState<string | null>(null);
+
   const timerRef = useRef<number | null>(null);
   const isInfiniteMode = testDuration === 0;
 
+  useEffect(() => {
+    const generateAndSetPhrases = async () => {
+        setIsGenerating(true);
+        setCurrentTranslation(null);
+        try {
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: `Erstelle ${PHRASE_COUNT} einzigartige deutsche Sätze für einen Tipptest auf dem GER-Niveau "${LEVELS[currentLevelId].name}". Gib auch eine professionelle spanische Übersetzung für jeden Satz an. Sorge dafür, dass die Sätze grammatikalisch korrekt sind und eine abwechslungsreiche Struktur haben.`,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            phrases: {
+                                type: Type.ARRAY,
+                                description: 'Eine Liste von Sätzen und deren Übersetzungen.',
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        german: { type: Type.STRING, description: 'Der deutsche Satz.' },
+                                        spanish: { type: Type.STRING, description: 'Die spanische Übersetzung.' }
+                                    },
+                                    required: ['german', 'spanish']
+                                }
+                            }
+                        }
+                    },
+                },
+            });
+
+            // Fix: Explicitly type the parsed JSON to ensure type safety for `levelPhrases`.
+            const data: { phrases: GeneratedPhrase[] } = JSON.parse(response.text);
+            if (data.phrases && data.phrases.length > 0) {
+              setLevelPhrases(data.phrases);
+            } else {
+              throw new Error("API returned no phrases");
+            }
+        } catch (error) {
+            console.error("Fehler beim Generieren von Sätzen, Fallback auf lokale Daten:", error);
+            const fallbackPhrases = LEVELS[currentLevelId].phrases.map(p => ({ german: p, spanish: '' }));
+            setLevelPhrases(fallbackPhrases);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+    generateAndSetPhrases();
+  }, [currentLevelId]);
+
   const startGame = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (levelPhrases.length === 0) return;
     
     setGameState(GameState.Playing);
     setUserInput('');
+    setCurrentTranslation(null);
     
-    const phrasesForLevel = LEVELS[currentLevelId].phrases;
-    const baseWords = phrasesForLevel.flatMap(p => p.split(' ')).filter(Boolean);
-    // Create a long list of words to ensure the test can run for any duration without running out.
-    let wordPool: string[] = [];
-    while (wordPool.length < 500) {
-      wordPool.push(...shuffle(baseWords));
-    }
-    setWords(wordPool.slice(0, 500));
+    const shuffledPhrases = shuffle(levelPhrases);
+    setActivePhrases(shuffledPhrases);
+
+    const newWordSentenceMap: number[] = [];
+    const allWords = shuffledPhrases.flatMap((phrase, sentenceIndex) => {
+        const sentenceWords = phrase.german.split(' ').filter(Boolean);
+        sentenceWords.forEach(() => newWordSentenceMap.push(sentenceIndex));
+        return sentenceWords;
+    });
+    setWords(allWords);
+    setWordSentenceMap(newWordSentenceMap);
     
     setCurrentWordIndex(0);
     setTimeLeft(testDuration);
@@ -61,12 +121,13 @@ const App: React.FC = () => {
       setTimeLeft(prev => (isInfiniteMode ? prev : prev - 1));
       setElapsedTime(prev => prev + 1);
     }, 1000);
-  }, [currentLevelId, testDuration, isInfiniteMode]);
+  }, [levelPhrases, testDuration, isInfiniteMode]);
 
   const restartGame = useCallback(() => {
      if (timerRef.current) clearInterval(timerRef.current);
      setGameState(GameState.Ready);
      setUserInput('');
+     setCurrentTranslation(null);
      setTimeLeft(testDuration);
      setElapsedTime(0);
   }, [testDuration]);
@@ -102,14 +163,13 @@ const App: React.FC = () => {
     
     if (e.key === ' ') {
       if (!userInput) return;
+      setCurrentTranslation(null);
       
-      // Account for any characters the user missed by skipping the word early.
       const missedChars = Math.max(0, currentWord.length - userInput.length);
       if (missedChars > 0) {
         setStats(prev => ({...prev, incorrectChars: prev.incorrectChars + missedChars }));
       }
       
-      // The space is only counted as a correct character if the word was typed perfectly.
       if (userInput === currentWord) {
         setStats(prev => ({...prev, correctChars: prev.correctChars + 1}));
       }
@@ -136,7 +196,7 @@ const App: React.FC = () => {
         }
       }
       setUserInput(prev => prev.slice(0, -1));
-    } else if (e.key.length === 1 && e.key.match(/^[a-zA-ZäöüÄÖÜß.,!?"' ]$/)) {
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         const newUserInput = userInput + e.key;
         setUserInput(newUserInput);
         
@@ -147,7 +207,29 @@ const App: React.FC = () => {
             setStats(prev => ({...prev, incorrectChars: prev.incorrectChars + 1}));
         }
     }
-  }, [gameState, userInput, words, currentWordIndex, stats.correctChars, stats.incorrectChars]);
+  }, [gameState, userInput, words, currentWordIndex]);
+
+  const handleTTS = useCallback(() => {
+    if (gameState !== GameState.Playing || !('speechSynthesis' in window)) return;
+    const sentenceIndex = wordSentenceMap[currentWordIndex];
+    if (sentenceIndex === undefined) return;
+    const phrase = activePhrases[sentenceIndex];
+    const utterance = new SpeechSynthesisUtterance(phrase.german);
+    utterance.lang = 'de-DE';
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  }, [gameState, currentWordIndex, wordSentenceMap, activePhrases]);
+
+  const handleTranslate = useCallback(() => {
+    if (gameState !== GameState.Playing) return;
+    const sentenceIndex = wordSentenceMap[currentWordIndex];
+    if (sentenceIndex === undefined) return;
+    const phrase = activePhrases[sentenceIndex];
+    if (phrase.spanish) {
+      setCurrentTranslation(phrase.spanish);
+    }
+  }, [gameState, currentWordIndex, wordSentenceMap, activePhrases]);
+
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -155,6 +237,7 @@ const App: React.FC = () => {
   }, [handleKeyDown]);
 
   const timeForUI = isInfiniteMode ? elapsedTime : timeLeft;
+  const isTranslationAvailable = levelPhrases.length > 0 && !!levelPhrases[0].spanish;
 
   return (
     <main className="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 selection:bg-yellow-500/50">
@@ -166,7 +249,16 @@ const App: React.FC = () => {
         </header>
 
         {gameState === GameState.Playing && (
-            <GameUI time={timeForUI} isInfiniteMode={isInfiniteMode} wpm={stats.wpm} accuracy={stats.accuracy} onRestart={restartGame} />
+            <GameUI 
+              time={timeForUI} 
+              isInfiniteMode={isInfiniteMode} 
+              wpm={stats.wpm} 
+              accuracy={stats.accuracy} 
+              onRestart={restartGame}
+              onTTS={handleTTS}
+              onTranslate={handleTranslate}
+              isTranslationAvailable={isTranslationAvailable}
+            />
         )}
         
         <div className="w-full max-w-3xl min-h-[10rem] flex flex-col items-center justify-center">
@@ -177,6 +269,21 @@ const App: React.FC = () => {
           )}
         </div>
         
+        {currentTranslation && gameState === GameState.Playing && (
+            <div className="mt-4 p-4 bg-slate-800 rounded-lg max-w-3xl w-full text-center relative border border-slate-700">
+                <p className="text-cyan-300 text-lg italic pr-8">{currentTranslation}</p>
+                <button 
+                    onClick={() => setCurrentTranslation(null)} 
+                    className="absolute top-2 right-2 text-slate-500 hover:text-white"
+                    aria-label="Übersetzung schließen"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        )}
+
         {(gameState === GameState.Ready || gameState === GameState.Finished) && (
           <GameOverlay 
             gameState={gameState}
@@ -187,6 +294,7 @@ const App: React.FC = () => {
             selectedDuration={testDuration}
             onDurationSelect={setTestDuration}
             stats={finalStats}
+            isGenerating={isGenerating}
           />
         )}
       </div>

@@ -11,6 +11,7 @@ interface GameOverlayProps {
   selectedDuration: TestDuration;
   onDurationSelect: (duration: TestDuration) => void;
   stats: TestStats | null;
+  isGenerating: boolean;
 }
 
 const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats'>> = ({
@@ -20,20 +21,9 @@ const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats'>> = ({
   onLevelSelect,
   selectedDuration,
   onDurationSelect,
+  isGenerating,
 }) => {
   const levelKeys = Object.keys(levels) as LevelId[];
-
-  const handleTTS = () => {
-    if (!('speechSynthesis' in window)) {
-      alert('Entschuldigung, Ihr Browser unterstützt keine Text-zu-Sprache.');
-      return;
-    }
-    const phrases = levels[selectedLevel].phrases;
-    const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-    const utterance = new SpeechSynthesisUtterance(randomPhrase);
-    utterance.lang = 'de-DE';
-    window.speechSynthesis.speak(utterance);
-  };
 
   return (
     <div className="bg-slate-800/50 p-8 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl">
@@ -51,7 +41,8 @@ const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats'>> = ({
             <button
               key={duration}
               onClick={() => onDurationSelect(duration)}
-              className={`font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 ease-in-out transform focus:outline-none focus:ring-2 ${
+              disabled={isGenerating}
+              className={`font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 ease-in-out transform focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                 duration === selectedDuration
                   ? 'bg-cyan-400 text-slate-900 ring-cyan-300 scale-105'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600 ring-slate-500'
@@ -70,7 +61,8 @@ const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats'>> = ({
             <button
               key={levelId}
               onClick={() => onLevelSelect(levelId)}
-              className={`font-bold py-2 px-4 rounded-lg text-base transition-all duration-200 ease-in-out transform focus:outline-none focus:ring-2 ${
+              disabled={isGenerating}
+              className={`font-bold py-2 px-4 rounded-lg text-base transition-all duration-200 ease-in-out transform focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                 levelId === selectedLevel
                   ? 'bg-cyan-400 text-slate-900 ring-cyan-300 scale-105'
                   : 'bg-slate-700 text-slate-300 hover:bg-slate-600 ring-slate-500'
@@ -84,19 +76,11 @@ const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats'>> = ({
       
       <div className="flex items-center justify-center gap-4">
         <button
-          onClick={handleTTS}
-          aria-label="Beispielsatz vorlesen"
-          className="bg-slate-700 text-slate-300 p-3 rounded-lg hover:bg-slate-600 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-slate-500/50"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-          </svg>
-        </button>
-        <button
           onClick={onStart}
-          className="bg-yellow-400 text-slate-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-300 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-500/50"
+          disabled={isGenerating}
+          className="bg-yellow-400 text-slate-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-300 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-500/50 disabled:bg-slate-600 disabled:text-slate-400 disabled:cursor-wait"
         >
-          Start
+          {isGenerating ? 'Sätze werden geladen...' : 'Start'}
         </button>
       </div>
     </div>

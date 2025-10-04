@@ -19,3 +19,8 @@ export interface TestStats {
   correctChars: number;
   incorrectChars: number;
 }
+
+export interface GeneratedPhrase {
+  german: string;
+  spanish: string;
+}
