@@ -7,6 +7,7 @@ import AccuracyChart from './AccuracyChart';
 interface GameOverlayProps {
   gameState: GameState;
   onStart: () => void;
+  onRestart: () => void;
   levels: Record<LevelId, Level>;
   selectedLevel: LevelId;
   onLevelSelect: (levelId: LevelId) => void;
@@ -17,9 +18,10 @@ interface GameOverlayProps {
   wpmHistory: WPMDataPoint[];
   accuracyHistory: AccuracyDataPoint[];
   difficultWords: string[];
+  loadingProgress: number;
 }
 
-const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'wpmHistory' | 'accuracyHistory' | 'difficultWords'>> = ({
+const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'wpmHistory' | 'accuracyHistory' | 'difficultWords' | 'onRestart'>> = ({
   onStart,
   levels,
   selectedLevel,
@@ -27,6 +29,7 @@ const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'wpmH
   selectedDuration,
   onDurationSelect,
   isGenerating,
+  loadingProgress,
 }) => {
   const levelKeys = Object.keys(levels) as LevelId[];
 
@@ -79,14 +82,22 @@ const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'wpmH
         </div>
       </div>
       
-      <div className="flex items-center justify-center gap-4">
-        <button
-          onClick={onStart}
-          disabled={isGenerating}
-          className="bg-yellow-400 text-slate-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-300 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-500/50 disabled:bg-slate-600 disabled:text-slate-400 disabled:cursor-wait"
-        >
-          {isGenerating ? 'Sätze werden geladen...' : 'Start'}
-        </button>
+      <div className="flex items-center justify-center gap-4 min-h-[68px]">
+        {isGenerating ? (
+          <div className="text-center w-full">
+            <p className="text-slate-300 mb-2 text-lg">Sätze werden geladen...</p>
+            <div className="loading-bar">
+              <div className="loading-bar-inner" style={{ width: `${loadingProgress}%` }}></div>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={onStart}
+            className="bg-yellow-400 text-slate-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-300 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-500/50"
+          >
+            Start
+          </button>
+        )}
       </div>
     </div>
   );
@@ -156,7 +167,7 @@ const GameOverlay: React.FC<GameOverlayProps> = (props) => {
       {props.gameState === GameState.Finished && props.stats ? (
         <FinishedScreen 
             stats={props.stats} 
-            onRestart={props.onStart}
+            onRestart={props.onRestart}
             wpmHistory={props.wpmHistory}
             accuracyHistory={props.accuracyHistory}
             difficultWords={props.difficultWords}
