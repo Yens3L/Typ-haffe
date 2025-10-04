@@ -1,20 +1,29 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🇩🇪 Typ-Affe: German Typing Test
 
-# Run and deploy your AI Studio app
+Dieses Projekt ist eine interaktive Webanwendung, die entwickelt wurde, um die Schreibfähigkeiten in **deutscher Sprache** zu **bewerten und zu verbessern**. Es konzentriert sich auf die gezielte Übung mit der **QWERTZ-Tastaturbelegung** und stellt sicher, dass Benutzer die deutschen Sonderzeichen wie die **Umlaute** ($\mathbf{ä, ö, ü}$) und das **Eszett** ($\mathbf{ß}$) sicher beherrschen.
 
-This contains everything you need to run your app locally.
+Die Plattform liefert wichtige Leistungsmetriken wie **Wörter pro Minute (WpM)** und **Genauigkeit**. Dazu wird ein Korpus authentischer deutscher Texte verwendet, um eine praxisnahe Übung zu gewährleisten.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1R3kyjzlO-6H0mlfrFU7EKs-BaoPJBPkD
+---
 
-## Run Locally
+## Run and deploy your AI Studio app
 
-**Prerequisites:**  Node.js
+Dies enthält alles, was Sie benötigen, um Ihre App lokal auszuführen.
 
+Sehen Sie sich Ihre App in AI Studio an: [https://ai.studio/apps/drive/1R3kyjzJO-6H0mlfrFU7EKs-BaoPJBPRD](https://ai.studio/apps/drive/1R3kyjzJO-6H0mlfrFU7EKs-BaoPJBPRD)
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+---
+
+## Run Locally (Lokal ausführen)
+
+**Voraussetzungen:** Node.js
+
+1.  **Abhängigkeiten installieren:**
+    ```bash
+    npm install
+    ```
+2.  **Setzen Sie den `GEMINI_API_KEY` in `[.env.local]((.env.local))` auf Ihren Gemini API-Schlüssel**
+3.  **App starten:**
+    ```bash
+    npm run dev
+    ```
