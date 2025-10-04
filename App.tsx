@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, LevelId, TestDuration, TestStats, GeneratedPhrase } from './types';
-import { LEVELS } from './constants';
+import { GameState, LevelId, TestDuration, TestStats, GeneratedPhrase, WPMDataPoint, WordHistoryEntry } from './types';
+import { LEVELS, TEST_DURATIONS } from './constants';
 import WordDisplay from './components/WordDisplay';
 import GameOverlay from './components/GameOverlay';
 import GameUI from './components/GameUI';
+import WPMChart from './components/WPMChart';
 import { GoogleGenAI, Type } from "@google/genai";
 
 const PHRASE_COUNT = 25;
@@ -25,13 +26,35 @@ const App: React.FC = () => {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [userInput, setUserInput] = useState('');
   
-  const [currentLevelId, setCurrentLevelId] = useState<LevelId>('A1');
-  const [testDuration, setTestDuration] = useState<TestDuration>(30);
-  const [timeLeft, setTimeLeft] = useState(testDuration);
+  const [currentLevelId, setCurrentLevelId] = useState<LevelId>(() => {
+    try {
+      const savedLevel = localStorage.getItem('typAffe-level') as LevelId;
+      return savedLevel && LEVELS[savedLevel] ? savedLevel : 'A1';
+    } catch (error) {
+      console.error("Could not read level from localStorage", error);
+      return 'A1';
+    }
+  });
+  
+  const [testDuration, setTestDuration] = useState<TestDuration>(() => {
+    try {
+      const savedDuration = localStorage.getItem('typAffe-duration');
+      const duration = savedDuration ? parseInt(savedDuration, 10) : 30;
+      return TEST_DURATIONS.includes(duration as TestDuration) ? (duration as TestDuration) : 30;
+    } catch (error) {
+      console.error("Could not read duration from localStorage", error);
+      return 30;
+    }
+  });
+
+  const [timeLeft, setTimeLeft] = useState<number>(testDuration);
   const [elapsedTime, setElapsedTime] = useState(0);
   
   const [stats, setStats] = useState<TestStats>({ wpm: 0, accuracy: 100, correctChars: 0, incorrectChars: 0 });
   const [finalStats, setFinalStats] = useState<TestStats | null>(null);
+  const [wpmHistory, setWpmHistory] = useState<WPMDataPoint[]>([]);
+  const [wordHistory, setWordHistory] = useState<WordHistoryEntry[]>([]);
+  const [difficultWords, setDifficultWords] = useState<string[]>([]);
 
   const [isGenerating, setIsGenerating] = useState(true);
   const [levelPhrases, setLevelPhrases] = useState<GeneratedPhrase[]>([]);
@@ -41,6 +64,23 @@ const App: React.FC = () => {
 
   const timerRef = useRef<number | null>(null);
   const isInfiniteMode = testDuration === 0;
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('typAffe-level', currentLevelId);
+    } catch (error) {
+      console.error("Could not save level to localStorage", error);
+    }
+  }, [currentLevelId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('typAffe-duration', testDuration.toString());
+    } catch (error) {
+      console.error("Could not save duration to localStorage", error);
+    }
+  }, [testDuration]);
+
 
   useEffect(() => {
     const generateAndSetPhrases = async () => {
@@ -73,7 +113,6 @@ const App: React.FC = () => {
                 },
             });
 
-            // Fix: Explicitly type the parsed JSON to ensure type safety for `levelPhrases`.
             const data: { phrases: GeneratedPhrase[] } = JSON.parse(response.text);
             if (data.phrases && data.phrases.length > 0) {
               setLevelPhrases(data.phrases);
@@ -116,6 +155,9 @@ const App: React.FC = () => {
     setElapsedTime(0);
     setStats({ wpm: 0, accuracy: 100, correctChars: 0, incorrectChars: 0 });
     setFinalStats(null);
+    setWpmHistory([]);
+    setWordHistory([]);
+    setDifficultWords([]);
     
     timerRef.current = window.setInterval(() => {
       setTimeLeft(prev => (isInfiniteMode ? prev : prev - 1));
@@ -130,15 +172,25 @@ const App: React.FC = () => {
      setCurrentTranslation(null);
      setTimeLeft(testDuration);
      setElapsedTime(0);
+     setWpmHistory([]);
+     setWordHistory([]);
+     setDifficultWords([]);
   }, [testDuration]);
 
   useEffect(() => {
     if (!isInfiniteMode && timeLeft <= 0 && gameState === GameState.Playing) {
       if (timerRef.current) clearInterval(timerRef.current);
+      
+      const incorrectWords = wordHistory
+        .filter(entry => entry.typed !== entry.word)
+        .map(entry => entry.word);
+      const uniqueIncorrectWords = [...new Set(incorrectWords)];
+      setDifficultWords(uniqueIncorrectWords);
+      
       setGameState(GameState.Finished);
       setFinalStats(stats);
     }
-  }, [timeLeft, gameState, stats, isInfiniteMode]);
+  }, [timeLeft, gameState, stats, isInfiniteMode, wordHistory]);
   
   useEffect(() => {
     if (gameState !== GameState.Playing) return;
@@ -149,6 +201,10 @@ const App: React.FC = () => {
     const wpm = elapsedTime > 0 ? Math.round((stats.correctChars / 5) / (elapsedTime / 60)) : 0;
 
     setStats(prev => ({ ...prev, accuracy, wpm }));
+
+    if (elapsedTime > 0) {
+        setWpmHistory(prevHistory => [...prevHistory, { time: elapsedTime, wpm }]);
+    }
 
   }, [stats.correctChars, stats.incorrectChars, elapsedTime, gameState]);
 
@@ -164,6 +220,9 @@ const App: React.FC = () => {
     if (e.key === ' ') {
       if (!userInput) return;
       setCurrentTranslation(null);
+
+      const entry: WordHistoryEntry = { word: currentWord, typed: userInput };
+      setWordHistory(prev => [...prev, entry]);
       
       const missedChars = Math.max(0, currentWord.length - userInput.length);
       if (missedChars > 0) {
@@ -263,12 +322,23 @@ const App: React.FC = () => {
         
         <div className="w-full max-w-3xl min-h-[10rem] flex flex-col items-center justify-center">
           {gameState === GameState.Playing ? (
-            <WordDisplay words={words} currentWordIndex={currentWordIndex} userInput={userInput} />
+            <WordDisplay 
+              words={words} 
+              currentWordIndex={currentWordIndex} 
+              userInput={userInput}
+              wordSentenceMap={wordSentenceMap}
+            />
           ) : (
              <div className="text-slate-500 text-2xl h-36 flex items-center">Konfiguriere deinen Test, um zu beginnen</div>
           )}
         </div>
         
+        {gameState === GameState.Playing && wpmHistory.length > 1 && (
+            <div className="w-full max-w-3xl h-40 mt-4">
+                <WPMChart data={wpmHistory} />
+            </div>
+        )}
+
         {currentTranslation && gameState === GameState.Playing && (
             <div className="mt-4 p-4 bg-slate-800 rounded-lg max-w-3xl w-full text-center relative border border-slate-700">
                 <p className="text-cyan-300 text-lg italic pr-8">{currentTranslation}</p>
@@ -295,6 +365,7 @@ const App: React.FC = () => {
             onDurationSelect={setTestDuration}
             stats={finalStats}
             isGenerating={isGenerating}
+            difficultWords={difficultWords}
           />
         )}
       </div>

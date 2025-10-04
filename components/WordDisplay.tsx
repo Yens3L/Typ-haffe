@@ -4,41 +4,51 @@ interface WordDisplayProps {
   words: string[];
   currentWordIndex: number;
   userInput: string;
+  wordSentenceMap: number[];
 }
+
+const SENTENCE_COLORS = [
+  'text-slate-300',
+  'text-sky-300',
+  'text-teal-300',
+  'text-fuchsia-300',
+  'text-orange-300',
+];
 
 const Word: React.FC<{
   text: string;
   isCurrent: boolean;
   userInput: string;
-}> = ({ text, isCurrent, userInput }) => {
+  colorClass: string;
+}> = ({ text, isCurrent, userInput, colorClass }) => {
   // This class prevents the word from splitting across lines.
   const wordWrapperClasses = "mr-4 whitespace-nowrap";
 
   if (!isCurrent) {
     const isCompleted = userInput.trim() === text && userInput.endsWith(' ');
-    const color = isCompleted ? 'text-slate-500' : 'text-slate-400';
-    return <span className={`${wordWrapperClasses} ${color}`}>{text}</span>;
+    const finalColorClass = isCompleted ? `${colorClass} opacity-40` : colorClass;
+    return <span className={`${wordWrapperClasses} ${finalColorClass}`}>{text}</span>;
   }
 
   const typedChars = userInput.split('');
   const wordChars = text.split('');
 
   return (
-    <span className={`${wordWrapperClasses} text-slate-300 relative`}>
+    <span className={`${wordWrapperClasses} relative`}>
       {wordChars.map((char, index) => {
         const isTyped = index < typedChars.length;
         const isCorrect = isTyped && typedChars[index] === char;
         const isCursor = index === typedChars.length;
 
-        let colorClass = 'text-slate-400'; // untyped
+        let charColorClass = colorClass; // untyped characters get the sentence color
         if (isTyped) {
-          colorClass = isCorrect ? 'text-emerald-300' : 'text-red-500 underline decoration-2';
+          charColorClass = isCorrect ? 'text-emerald-300' : 'text-red-500 underline decoration-2';
         }
 
         const cursorClass = isCursor ? 'border-l-2 border-yellow-400 animate-blink -ml-0.5' : '';
 
         return (
-          <span key={index} className={`${colorClass} ${cursorClass}`}>
+          <span key={index} className={`${charColorClass} ${cursorClass}`}>
             {char}
           </span>
         );
@@ -59,7 +69,7 @@ const Word: React.FC<{
   );
 };
 
-const WordDisplay: React.FC<WordDisplayProps> = ({ words, currentWordIndex, userInput }) => {
+const WordDisplay: React.FC<WordDisplayProps> = ({ words, currentWordIndex, userInput, wordSentenceMap }) => {
   const wordsToShow = words.slice(
     Math.max(0, currentWordIndex - 5),
     currentWordIndex + 20
@@ -67,15 +77,19 @@ const WordDisplay: React.FC<WordDisplayProps> = ({ words, currentWordIndex, user
 
   return (
     <div className="font-mono text-3xl md:text-4xl tracking-wider select-none p-4 w-full text-left overflow-hidden h-36">
-      <div className="flex flex-wrap leading-relaxed">
+      <div className="flex flex-wrap items-center leading-relaxed">
         {wordsToShow.map((word, index) => {
            const absoluteIndex = index + Math.max(0, currentWordIndex - 5);
+           const sentenceIndex = wordSentenceMap[absoluteIndex] ?? 0;
+           const colorClass = SENTENCE_COLORS[sentenceIndex % SENTENCE_COLORS.length];
+
            return (
              <Word
                key={absoluteIndex}
                text={word}
                isCurrent={absoluteIndex === currentWordIndex}
                userInput={absoluteIndex < currentWordIndex ? `${word} ` : (absoluteIndex === currentWordIndex ? userInput : '')}
+               colorClass={colorClass}
              />
            );
         })}

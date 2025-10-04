@@ -24,3 +24,13 @@ export interface GeneratedPhrase {
   german: string;
   spanish: string;
 }
+
+export interface WPMDataPoint {
+  time: number;
+  wpm: number;
+}
+
+export interface WordHistoryEntry {
+  word: string;
+  typed: string;
+}

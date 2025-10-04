@@ -12,9 +12,10 @@ interface GameOverlayProps {
   onDurationSelect: (duration: TestDuration) => void;
   stats: TestStats | null;
   isGenerating: boolean;
+  difficultWords: string[];
 }
 
-const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats'>> = ({
+const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'difficultWords'>> = ({
   onStart,
   levels,
   selectedLevel,
@@ -87,7 +88,11 @@ const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats'>> = ({
   );
 };
 
-const FinishedScreen: React.FC<{ stats: TestStats; onRestart: () => void }> = ({ stats, onRestart }) => (
+const FinishedScreen: React.FC<{
+  stats: TestStats;
+  onRestart: () => void;
+  difficultWords: string[];
+}> = ({ stats, onRestart, difficultWords }) => (
   <div className="bg-slate-800/50 p-8 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl text-center">
     <h2 className="text-4xl font-bold font-orbitron mb-2 text-yellow-300">Ergebnis</h2>
     <div className="flex justify-center gap-8 md:gap-12 my-8">
@@ -100,12 +105,26 @@ const FinishedScreen: React.FC<{ stats: TestStats; onRestart: () => void }> = ({
         <div className="text-slate-400 uppercase tracking-widest">Genauigkeit</div>
       </div>
     </div>
-    <div className="text-slate-400 mb-8">
+    <div className="text-slate-400 mb-6">
       Zeichen: <span className="text-emerald-300">{stats.correctChars}</span> | <span className="text-red-500">{stats.incorrectChars}</span>
     </div>
+    
+    {difficultWords.length > 0 && (
+      <div className="mb-8">
+        <h3 className="text-slate-400 uppercase tracking-widest text-sm font-bold mb-4">Wörter zum Üben</h3>
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 max-w-lg mx-auto">
+          {difficultWords.map((word, index) => (
+            <span key={index} className="bg-slate-700 text-slate-300 py-1 px-3 rounded-md text-lg font-mono">
+              {word}
+            </span>
+          ))}
+        </div>
+      </div>
+    )}
+
     <button
         onClick={onRestart}
-        className="bg-yellow-400 text-slate-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-300 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-500/50"
+        className="bg-yellow-400 text-slate-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-300 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-500/50 mt-4"
       >
         Erneut versuchen
       </button>
@@ -116,7 +135,7 @@ const GameOverlay: React.FC<GameOverlayProps> = (props) => {
   return (
     <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-4">
       {props.gameState === GameState.Finished && props.stats ? (
-        <FinishedScreen stats={props.stats} onRestart={props.onStart} />
+        <FinishedScreen stats={props.stats} onRestart={props.onStart} difficultWords={props.difficultWords}/>
       ) : (
         <StartScreen {...props} />
       )}
