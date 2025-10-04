@@ -30,6 +30,11 @@ export interface WPMDataPoint {
   wpm: number;
 }
 
+export interface AccuracyDataPoint {
+  time: number;
+  accuracy: number;
+}
+
 export interface WordHistoryEntry {
   word: string;
   typed: string;

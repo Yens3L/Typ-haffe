@@ -1,6 +1,8 @@
 import React from 'react';
-import { GameState, Level, LevelId, TestDuration, TestStats } from '../types';
+import { GameState, Level, LevelId, TestDuration, TestStats, WPMDataPoint, AccuracyDataPoint } from '../types';
 import { TEST_DURATIONS } from '../constants';
+import WPMChart from './WPMChart';
+import AccuracyChart from './AccuracyChart';
 
 interface GameOverlayProps {
   gameState: GameState;
@@ -12,10 +14,12 @@ interface GameOverlayProps {
   onDurationSelect: (duration: TestDuration) => void;
   stats: TestStats | null;
   isGenerating: boolean;
+  wpmHistory: WPMDataPoint[];
+  accuracyHistory: AccuracyDataPoint[];
   difficultWords: string[];
 }
 
-const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'difficultWords'>> = ({
+const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'wpmHistory' | 'accuracyHistory' | 'difficultWords'>> = ({
   onStart,
   levels,
   selectedLevel,
@@ -91,9 +95,11 @@ const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'diff
 const FinishedScreen: React.FC<{
   stats: TestStats;
   onRestart: () => void;
+  wpmHistory: WPMDataPoint[];
+  accuracyHistory: AccuracyDataPoint[];
   difficultWords: string[];
-}> = ({ stats, onRestart, difficultWords }) => (
-  <div className="bg-slate-800/50 p-8 rounded-xl shadow-2xl border border-slate-700 w-full max-w-2xl text-center">
+}> = ({ stats, onRestart, wpmHistory, accuracyHistory, difficultWords }) => (
+  <div className="bg-slate-800/50 p-8 rounded-xl shadow-2xl border border-slate-700 w-full max-w-4xl text-center">
     <h2 className="text-4xl font-bold font-orbitron mb-2 text-yellow-300">Ergebnis</h2>
     <div className="flex justify-center gap-8 md:gap-12 my-8">
       <div>
@@ -108,6 +114,19 @@ const FinishedScreen: React.FC<{
     <div className="text-slate-400 mb-6">
       Zeichen: <span className="text-emerald-300">{stats.correctChars}</span> | <span className="text-red-500">{stats.incorrectChars}</span>
     </div>
+
+    {wpmHistory.length > 1 && accuracyHistory.length > 1 && (
+      <div className="w-full mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="h-64">
+          <h3 className="text-slate-400 uppercase tracking-widest text-sm font-bold mb-2">WPM über Zeit</h3>
+          <WPMChart data={wpmHistory} />
+        </div>
+        <div className="h-64">
+          <h3 className="text-slate-400 uppercase tracking-widest text-sm font-bold mb-2">Genauigkeit über Zeit</h3>
+          <AccuracyChart data={accuracyHistory} />
+        </div>
+      </div>
+    )}
     
     {difficultWords.length > 0 && (
       <div className="mb-8">
@@ -135,7 +154,13 @@ const GameOverlay: React.FC<GameOverlayProps> = (props) => {
   return (
     <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-4">
       {props.gameState === GameState.Finished && props.stats ? (
-        <FinishedScreen stats={props.stats} onRestart={props.onStart} difficultWords={props.difficultWords}/>
+        <FinishedScreen 
+            stats={props.stats} 
+            onRestart={props.onStart}
+            wpmHistory={props.wpmHistory}
+            accuracyHistory={props.accuracyHistory}
+            difficultWords={props.difficultWords}
+        />
       ) : (
         <StartScreen {...props} />
       )}

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, LevelId, TestDuration, TestStats, GeneratedPhrase, WPMDataPoint, WordHistoryEntry } from './types';
+import { GameState, LevelId, TestDuration, TestStats, GeneratedPhrase, WPMDataPoint, WordHistoryEntry, AccuracyDataPoint } from './types';
 import { LEVELS, TEST_DURATIONS } from './constants';
 import WordDisplay from './components/WordDisplay';
 import GameOverlay from './components/GameOverlay';
 import GameUI from './components/GameUI';
-import WPMChart from './components/WPMChart';
 import { GoogleGenAI, Type } from "@google/genai";
 
 const PHRASE_COUNT = 25;
@@ -53,14 +52,17 @@ const App: React.FC = () => {
   const [stats, setStats] = useState<TestStats>({ wpm: 0, accuracy: 100, correctChars: 0, incorrectChars: 0 });
   const [finalStats, setFinalStats] = useState<TestStats | null>(null);
   const [wpmHistory, setWpmHistory] = useState<WPMDataPoint[]>([]);
+  const [accuracyHistory, setAccuracyHistory] = useState<AccuracyDataPoint[]>([]);
   const [wordHistory, setWordHistory] = useState<WordHistoryEntry[]>([]);
   const [difficultWords, setDifficultWords] = useState<string[]>([]);
 
   const [isGenerating, setIsGenerating] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
   const [levelPhrases, setLevelPhrases] = useState<GeneratedPhrase[]>([]);
   const [activePhrases, setActivePhrases] = useState<GeneratedPhrase[]>([]);
   const [wordSentenceMap, setWordSentenceMap] = useState<number[]>([]);
   const [currentTranslation, setCurrentTranslation] = useState<string | null>(null);
+  const [isSentenceTransitioning, setIsSentenceTransitioning] = useState(false);
 
   const timerRef = useRef<number | null>(null);
   const isInfiniteMode = testDuration === 0;
@@ -85,47 +87,64 @@ const App: React.FC = () => {
   useEffect(() => {
     const generateAndSetPhrases = async () => {
         setIsGenerating(true);
+        setApiError(null);
         setCurrentTranslation(null);
-        try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
-                contents: `Erstelle ${PHRASE_COUNT} einzigartige deutsche Sätze für einen Tipptest auf dem GER-Niveau "${LEVELS[currentLevelId].name}". Gib auch eine professionelle spanische Übersetzung für jeden Satz an. Sorge dafür, dass die Sätze grammatikalisch korrekt sind und eine abwechslungsreiche Struktur haben.`,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            phrases: {
-                                type: Type.ARRAY,
-                                description: 'Eine Liste von Sätzen und deren Übersetzungen.',
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        german: { type: Type.STRING, description: 'Der deutsche Satz.' },
-                                        spanish: { type: Type.STRING, description: 'Die spanische Übersetzung.' }
-                                    },
-                                    required: ['german', 'spanish']
+
+        const MAX_RETRIES = 2; // Total of 3 attempts
+        let success = false;
+
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                const response = await ai.models.generateContent({
+                    model: "gemini-2.5-flash",
+                    contents: `Erstelle ${PHRASE_COUNT} einzigartige deutsche Sätze für einen Tipptest auf dem GER-Niveau "${LEVELS[currentLevelId].name}". Gib auch eine professionelle spanische Übersetzung für jeden Satz an. Sorge dafür, dass die Sätze grammatisch korrekt sind und eine abwechslungsreiche Struktur haben.`,
+                    config: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: Type.OBJECT,
+                            properties: {
+                                phrases: {
+                                    type: Type.ARRAY,
+                                    description: 'Eine Liste von Sätzen und deren Übersetzungen.',
+                                    items: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            german: { type: Type.STRING, description: 'Der deutsche Satz.' },
+                                            spanish: { type: Type.STRING, description: 'Die spanische Übersetzung.' }
+                                        },
+                                        required: ['german', 'spanish']
+                                    }
                                 }
                             }
                         }
                     },
-                },
-            });
+                });
+                
+                const data = JSON.parse(response.text) as { phrases: GeneratedPhrase[] };
+                if (data.phrases && data.phrases.length > 0) {
+                  setLevelPhrases(data.phrases);
+                  success = true;
+                  break; // Success, exit the loop
+                }
+                throw new Error("API returned no phrases or malformed data");
 
-            const data: { phrases: GeneratedPhrase[] } = JSON.parse(response.text);
-            if (data.phrases && data.phrases.length > 0) {
-              setLevelPhrases(data.phrases);
-            } else {
-              throw new Error("API returned no phrases");
+            } catch (error) {
+                console.error(`Fehler beim Generieren von Sätzen (Versuch ${attempt + 1}/${MAX_RETRIES + 1}):`, error);
+                if (attempt < MAX_RETRIES) {
+                    await new Promise(res => setTimeout(res, 1000 * (attempt + 1))); // Wait before retrying
+                }
             }
-        } catch (error) {
-            console.error("Fehler beim Generieren von Sätzen, Fallback auf lokale Daten:", error);
+        }
+
+        if (!success) {
+            console.error("Alle Versuche fehlgeschlagen. Fallback auf lokale Daten.");
+            setApiError("Sätze konnten nicht vom Server geladen werden. Es werden Standard-Sätze verwendet.");
             const fallbackPhrases = LEVELS[currentLevelId].phrases.map(p => ({ german: p, spanish: '' }));
             setLevelPhrases(fallbackPhrases);
-        } finally {
-            setIsGenerating(false);
         }
+
+        setIsGenerating(false);
     };
     generateAndSetPhrases();
   }, [currentLevelId]);
@@ -142,7 +161,8 @@ const App: React.FC = () => {
     setActivePhrases(shuffledPhrases);
 
     const newWordSentenceMap: number[] = [];
-    const allWords = shuffledPhrases.flatMap((phrase, sentenceIndex) => {
+    // FIX: Explicitly type the 'phrase' parameter to resolve TypeScript inference issue.
+    const allWords = shuffledPhrases.flatMap((phrase: GeneratedPhrase, sentenceIndex) => {
         const sentenceWords = phrase.german.split(' ').filter(Boolean);
         sentenceWords.forEach(() => newWordSentenceMap.push(sentenceIndex));
         return sentenceWords;
@@ -156,6 +176,7 @@ const App: React.FC = () => {
     setStats({ wpm: 0, accuracy: 100, correctChars: 0, incorrectChars: 0 });
     setFinalStats(null);
     setWpmHistory([]);
+    setAccuracyHistory([]);
     setWordHistory([]);
     setDifficultWords([]);
     
@@ -173,6 +194,7 @@ const App: React.FC = () => {
      setTimeLeft(testDuration);
      setElapsedTime(0);
      setWpmHistory([]);
+     setAccuracyHistory([]);
      setWordHistory([]);
      setDifficultWords([]);
   }, [testDuration]);
@@ -204,6 +226,7 @@ const App: React.FC = () => {
 
     if (elapsedTime > 0) {
         setWpmHistory(prevHistory => [...prevHistory, { time: elapsedTime, wpm }]);
+        setAccuracyHistory(prevHistory => [...prevHistory, { time: elapsedTime, accuracy }]);
     }
 
   }, [stats.correctChars, stats.incorrectChars, elapsedTime, gameState]);
@@ -233,6 +256,15 @@ const App: React.FC = () => {
         setStats(prev => ({...prev, correctChars: prev.correctChars + 1}));
       }
       
+      const isLastWordOfSentence = wordSentenceMap.length > 0 &&
+                                 currentWordIndex < words.length - 1 &&
+                                 wordSentenceMap[currentWordIndex] !== wordSentenceMap[currentWordIndex + 1];
+      
+      if (isLastWordOfSentence) {
+        setIsSentenceTransitioning(true);
+        setTimeout(() => setIsSentenceTransitioning(false), 400);
+      }
+
       setCurrentWordIndex(prev => prev + 1);
       setUserInput('');
       return;
@@ -266,7 +298,7 @@ const App: React.FC = () => {
             setStats(prev => ({...prev, incorrectChars: prev.incorrectChars + 1}));
         }
     }
-  }, [gameState, userInput, words, currentWordIndex]);
+  }, [gameState, userInput, words, currentWordIndex, wordSentenceMap]);
 
   const handleTTS = useCallback(() => {
     if (gameState !== GameState.Playing || !('speechSynthesis' in window)) return;
@@ -307,6 +339,19 @@ const App: React.FC = () => {
           </h1>
         </header>
 
+        {apiError && (
+          <div className="bg-amber-500/10 border border-amber-500/30 text-amber-300 px-4 py-3 rounded-lg relative max-w-3xl w-full text-center mb-4" role="alert">
+            <span className="block sm:inline">{apiError}</span>
+            <button 
+                onClick={() => setApiError(null)} 
+                className="absolute top-0 bottom-0 right-0 px-4 py-3"
+                aria-label="Fehlermeldung schließen"
+            >
+                <svg className="fill-current h-6 w-6 text-amber-200/70 hover:text-amber-100" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Schließen</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
+            </button>
+          </div>
+        )}
+
         {gameState === GameState.Playing && (
             <GameUI 
               time={timeForUI} 
@@ -327,18 +372,13 @@ const App: React.FC = () => {
               currentWordIndex={currentWordIndex} 
               userInput={userInput}
               wordSentenceMap={wordSentenceMap}
+              isSentenceTransitioning={isSentenceTransitioning}
             />
           ) : (
              <div className="text-slate-500 text-2xl h-36 flex items-center">Konfiguriere deinen Test, um zu beginnen</div>
           )}
         </div>
         
-        {gameState === GameState.Playing && wpmHistory.length > 1 && (
-            <div className="w-full max-w-3xl h-40 mt-4">
-                <WPMChart data={wpmHistory} />
-            </div>
-        )}
-
         {currentTranslation && gameState === GameState.Playing && (
             <div className="mt-4 p-4 bg-slate-800 rounded-lg max-w-3xl w-full text-center relative border border-slate-700">
                 <p className="text-cyan-300 text-lg italic pr-8">{currentTranslation}</p>
@@ -365,6 +405,8 @@ const App: React.FC = () => {
             onDurationSelect={setTestDuration}
             stats={finalStats}
             isGenerating={isGenerating}
+            wpmHistory={wpmHistory}
+            accuracyHistory={accuracyHistory}
             difficultWords={difficultWords}
           />
         )}
