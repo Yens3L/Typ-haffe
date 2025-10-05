@@ -6,8 +6,6 @@ interface GameUIProps {
   wpm: number;
   accuracy: number;
   onTTS: () => void;
-  onTranslate: () => void;
-  isTranslationAvailable: boolean;
   onSkipSentence: () => void;
   correctChars: number;
   incorrectChars: number;
@@ -19,8 +17,6 @@ const GameUI: React.FC<GameUIProps> = ({
   wpm,
   accuracy,
   onTTS,
-  onTranslate,
-  isTranslationAvailable,
   onSkipSentence,
   correctChars,
   incorrectChars,
@@ -63,17 +59,6 @@ const GameUI: React.FC<GameUIProps> = ({
                 <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
             </svg>
         </button>
-        {isTranslationAvailable && (
-            <button
-                onClick={onTranslate}
-                aria-label="Satz übersetzen"
-                className="text-slate-500 hover:text-cyan-300 transition-colors duration-200"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-            </button>
-        )}
         <button
             onClick={onSkipSentence}
             aria-label="Satz überspringen"

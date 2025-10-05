@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameState, LevelId, TestDuration, TestStats, GeneratedPhrase, WPMDataPoint, WordHistoryEntry, AccuracyDataPoint } from './types';
-import { LEVELS, TEST_DURATIONS } from './constants';
+import { GameState, LevelId, TestDuration, TestStats, GeneratedPhrase, WPMDataPoint, WordHistoryEntry, AccuracyDataPoint, TranslationLanguage } from './types';
+import { LEVELS, TEST_DURATIONS, TRANSLATION_ADJECTIVES, TRANSLATION_LANGUAGES } from './constants';
 import WordDisplay from './components/WordDisplay';
 import GameOverlay from './components/GameOverlay';
 import GameUI from './components/GameUI';
 import Header from './components/Header';
+import AboutOverlay from './components/AboutOverlay';
 import { GoogleGenAI, Type } from "@google/genai";
 
 const PHRASE_COUNT = 25;
@@ -29,8 +30,12 @@ function shuffle<T>(array: T[]): T[] {
   return newArray;
 }
 
-function getPromptForLevel(levelId: LevelId, levelName: string, count: number): string {
-  const basePrompt = `Erstelle ${count} einzigartige, natürlich klingende deutsche Sätze für einen Tipptest. Jeder Satz muss genau dem GER-Niveau "${levelName}" entsprechen. Gib auch eine professionelle spanische Übersetzung für jeden Satz an. Die Sätze müssen grammatikalisch einwandfrei sein und eine abwechslungsreiche Satzstruktur sowie einen breiten, niveaugerechten Wortschatz aufweisen.`;
+function getPromptForLevel(levelId: LevelId, levelName: string, count: number, language: TranslationLanguage): string {
+  const translationInstruction = language === 'none' 
+    ? 'Gib auch ein Feld "translation" an, aber lasse es als leeren String.'
+    : `Gib auch eine professionelle ${TRANSLATION_ADJECTIVES[language]} Übersetzung für jeden Satz im Feld "translation" an.`;
+
+  const basePrompt = `Erstelle ${count} einzigartige, natürlich klingende deutsche Sätze für einen Tipptest. Jeder Satz muss genau dem GER-Niveau "${levelName}" entsprechen. ${translationInstruction} Die Sätze müssen grammatisch einwandfrei sein und eine abwechslungsreiche Satzstruktur sowie einen breiten, niveaugerechten Wortschatz aufweisen.`;
 
   let levelSpecificInstructions = '';
 
@@ -51,7 +56,7 @@ function getPromptForLevel(levelId: LevelId, levelName: string, count: number): 
       levelSpecificInstructions = 'Erstelle verschachtelte Sätze mit anspruchsvollen Konnektoren. Verwende idiomatische Wendungen und Fachvokabular. Der Stil kann formell oder akademisch sein.';
       break;
     case 'C2':
-      levelSpecificInstructions = 'Die Sätze sollen sehr komplex sein, mit seltenen grammatikalischen Strukturen und präzisem, abstraktem oder literarischem Vokabular. Nominalstil und Partizipialkonstruktionen sind erwünscht.';
+      levelSpecificInstructions = 'Die Sätze sollen sehr komplex sein, mit seltenen grammatischen Strukturen und präzisem, abstraktem oder literarischem Vokabular. Nominalstil und Partizipialkonstruktionen sind erwünscht.';
       break;
   }
   
@@ -85,6 +90,16 @@ const App: React.FC = () => {
     }
   });
 
+  const [translationLanguage, setTranslationLanguage] = useState<TranslationLanguage>(() => {
+    try {
+      const savedLang = localStorage.getItem('typAffe-translationLang') as TranslationLanguage;
+      return savedLang && TRANSLATION_LANGUAGES[savedLang] ? savedLang : 'es';
+    } catch (error) {
+      console.error("Could not read language from localStorage", error);
+      return 'es';
+    }
+  });
+
   const [timeLeft, setTimeLeft] = useState<number>(testDuration);
   const [elapsedTime, setElapsedTime] = useState(0);
   
@@ -101,9 +116,9 @@ const App: React.FC = () => {
   const [levelPhrases, setLevelPhrases] = useState<GeneratedPhrase[]>([]);
   const [activePhrases, setActivePhrases] = useState<GeneratedPhrase[]>([]);
   const [wordSentenceMap, setWordSentenceMap] = useState<number[]>([]);
-  const [currentTranslation, setCurrentTranslation] = useState<string | null>(null);
   const [isSentenceTransitioning, setIsSentenceTransitioning] = useState(false);
   const [isTimerActive, setIsTimerActive] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   
   const timerRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -125,13 +140,21 @@ const App: React.FC = () => {
     }
   }, [testDuration]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem('typAffe-translationLang', translationLanguage);
+    } catch (error) {
+      console.error("Could not save language to localStorage", error);
+    }
+  }, [translationLanguage]);
+
+
   const startGame = useCallback(async () => {
     if (isGenerating) return;
 
     setIsGenerating(true);
     setLoadingProgress(0);
     setApiError(null);
-    setCurrentTranslation(null);
     
     const progressInterval = setInterval(() => {
       setLoadingProgress(prev => Math.min(95, prev + Math.random() * 5 + 2));
@@ -144,7 +167,7 @@ const App: React.FC = () => {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const prompt = getPromptForLevel(currentLevelId, LEVELS[currentLevelId].name, PHRASE_COUNT);
+            const prompt = getPromptForLevel(currentLevelId, LEVELS[currentLevelId].name, PHRASE_COUNT, translationLanguage);
             const response = await ai.models.generateContent({
                 model: "gemini-2.5-flash",
                 contents: prompt,
@@ -160,9 +183,9 @@ const App: React.FC = () => {
                                     type: Type.OBJECT,
                                     properties: {
                                         german: { type: Type.STRING, description: 'Der deutsche Satz.' },
-                                        spanish: { type: Type.STRING, description: 'Die spanische Übersetzung.' }
+                                        translation: { type: Type.STRING, description: 'Die Übersetzung des Satzes.' }
                                     },
-                                    required: ['german', 'spanish']
+                                    required: ['german', 'translation']
                                 }
                             }
                         }
@@ -190,7 +213,7 @@ const App: React.FC = () => {
     if (!success) {
         console.error("Alle Versuche fehlgeschlagen. Fallback auf lokale Daten.");
         setApiError("Sätze konnten nicht vom Server geladen werden. Es werden Standard-Sätze verwendet.");
-        generatedPhrases = LEVELS[currentLevelId].phrases.map(p => ({ german: p, spanish: '' }));
+        generatedPhrases = LEVELS[currentLevelId].phrases.map(p => ({ german: p, translation: '' }));
         setLevelPhrases(generatedPhrases);
     }
     
@@ -232,12 +255,11 @@ const App: React.FC = () => {
       
       setTimeout(() => inputRef.current?.focus(), 100);
     }, 500);
-  }, [currentLevelId, isGenerating, testDuration]);
+  }, [currentLevelId, isGenerating, testDuration, translationLanguage]);
 
   const restartGame = useCallback(() => {
      setGameState(GameState.Ready);
      setUserInput('');
-     setCurrentTranslation(null);
      setTimeLeft(testDuration);
      setElapsedTime(0);
      setWpmHistory([]);
@@ -266,7 +288,6 @@ const App: React.FC = () => {
 
     if (!isTimerActive) {
         setIsTimerActive(true);
-        setCurrentTranslation(null);
     }
 
     const currentWord = words[currentWordIndex];
@@ -300,13 +321,6 @@ const App: React.FC = () => {
     const isLastWordOfSentence = wordSentenceMap[currentWordIndex] !== wordSentenceMap[currentWordIndex + 1];
     if (isLastWordOfSentence) {
         setIsTimerActive(false);
-        const sentenceIndex = wordSentenceMap[currentWordIndex];
-        if (sentenceIndex !== undefined) {
-            const phrase = activePhrases[sentenceIndex];
-            if (phrase && phrase.spanish) {
-                setCurrentTranslation(phrase.spanish);
-            }
-        }
         setIsSentenceTransitioning(true);
         setTimeout(() => setIsSentenceTransitioning(false), 600);
     }
@@ -378,7 +392,6 @@ const App: React.FC = () => {
 
     if (!isTimerActive) {
         setIsTimerActive(true);
-        setCurrentTranslation(null);
     }
 
     const newValue = e.target.value;
@@ -404,16 +417,6 @@ const App: React.FC = () => {
     window.speechSynthesis.speak(utterance);
   }, [gameState, currentWordIndex, wordSentenceMap, activePhrases]);
 
-  const handleTranslate = useCallback(() => {
-    if (gameState !== GameState.Playing) return;
-    const sentenceIndex = wordSentenceMap[currentWordIndex];
-    if (sentenceIndex === undefined) return;
-    const phrase = activePhrases[sentenceIndex];
-    if (phrase.spanish) {
-      setCurrentTranslation(currentTranslation ? null : phrase.spanish);
-    }
-  }, [gameState, currentWordIndex, wordSentenceMap, activePhrases, currentTranslation]);
-
   const handleSkipSentence = useCallback(() => {
     if (gameState !== GameState.Playing || words.length === 0) return;
 
@@ -434,19 +437,21 @@ const App: React.FC = () => {
     
     setCurrentWordIndex(nextWordIndex);
     setUserInput('');
-    setCurrentTranslation(null);
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [gameState, words, currentWordIndex, wordSentenceMap]);
 
 
   const timeForUI = isInfiniteMode ? elapsedTime : timeLeft;
-  const isTranslationAvailable = levelPhrases.length > 0 && !!levelPhrases.some(p => p.spanish);
+  const currentSentenceIndex = wordSentenceMap[currentWordIndex];
+  const currentPhrase = activePhrases[currentSentenceIndex];
+  const translationToShow = (gameState === GameState.Playing && currentPhrase && currentPhrase.translation && translationLanguage !== 'none') ? currentPhrase.translation : null;
 
   return (
     <main className="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 selection:bg-yellow-500/50">
       <Header 
         onRestart={restartGame} 
         onFullScreen={toggleFullScreen} 
+        onAbout={() => setIsAboutOpen(true)}
       />
       <div className="relative w-full flex flex-col items-center justify-center pt-16">
 
@@ -474,8 +479,6 @@ const App: React.FC = () => {
                     wpm={stats.wpm} 
                     accuracy={stats.accuracy} 
                     onTTS={handleTTS}
-                    onTranslate={handleTranslate}
-                    isTranslationAvailable={isTranslationAvailable}
                     onSkipSentence={handleSkipSentence}
                     correctChars={stats.correctChars}
                     incorrectChars={stats.incorrectChars}
@@ -515,20 +518,32 @@ const App: React.FC = () => {
               spellCheck="false"
           />
         </div>
-
-        {currentTranslation && gameState === GameState.Playing && (
-            <div className="mt-4 p-4 bg-slate-800 rounded-lg w-full text-center relative border border-slate-700">
-                <p className="text-cyan-300 text-lg italic pr-8">{currentTranslation}</p>
-                <button 
-                    onClick={() => setCurrentTranslation(null)} 
-                    className="absolute top-2 right-2 text-slate-500 hover:text-white"
-                    aria-label="Übersetzung schließen"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+        
+        {gameState === GameState.Playing && (
+          <div className="mt-4 p-4 bg-slate-800/60 rounded-lg w-full max-w-3xl text-center border border-slate-700/80 min-h-[7rem] flex flex-col justify-center items-center">
+            <div className="flex justify-center items-center gap-3 mb-3">
+              <label htmlFor="lang-select" className="text-slate-400 text-sm font-bold uppercase tracking-wider">Übersetzung</label>
+              <select
+                id="lang-select"
+                value={translationLanguage}
+                onChange={(e) => setTranslationLanguage(e.target.value as TranslationLanguage)}
+                className="bg-slate-700 border border-slate-600 text-slate-300 text-sm rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 p-1 appearance-none text-center"
+                style={{backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2rem' }}
+              >
+                {Object.entries(TRANSLATION_LANGUAGES).map(([code, name]) => (
+                  <option key={code} value={code}>{name}</option>
+                ))}
+              </select>
             </div>
+            {translationLanguage !== 'none' ? (
+                <p className="text-cyan-300 text-lg italic px-4 min-h-7 flex items-center justify-center">
+                  {translationToShow || '...'}
+                </p>
+              ) : (
+                <p className="text-slate-500 text-lg italic">Übersetzung ist deaktiviert.</p>
+              )
+            }
+          </div>
         )}
 
         {(gameState === GameState.Ready || gameState === GameState.Finished) && (
@@ -549,6 +564,8 @@ const App: React.FC = () => {
             loadingProgress={loadingProgress}
           />
         )}
+
+        <AboutOverlay isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
       </div>
     </main>
   );

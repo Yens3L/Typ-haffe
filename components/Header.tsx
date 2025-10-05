@@ -3,9 +3,10 @@ import React from 'react';
 interface HeaderProps {
   onRestart: () => void;
   onFullScreen: () => void;
+  onAbout: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onRestart, onFullScreen }) => {
+const Header: React.FC<HeaderProps> = ({ onRestart, onFullScreen, onAbout }) => {
   return (
     <header className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center text-slate-500 z-20">
       <div className="text-lg hidden sm:block">
@@ -15,6 +16,15 @@ const Header: React.FC<HeaderProps> = ({ onRestart, onFullScreen }) => {
         Typ-Affe
       </div>
       <div className="flex items-center gap-6">
+        <button
+          onClick={onAbout}
+          aria-label="About this application"
+          className="hover:text-cyan-300 transition-colors duration-200"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        </button>
         <button
           onClick={onRestart}
           aria-label="Test neustarten"

@@ -1,6 +1,23 @@
-import { Level, LevelId, TestDuration } from "./types";
+import { Level, LevelId, TestDuration, TranslationLanguage } from "./types";
 
 export const TEST_DURATIONS: TestDuration[] = [30, 60, 90, 0];
+
+export const TRANSLATION_LANGUAGES: Record<TranslationLanguage, string> = {
+  es: 'Spanisch',
+  en: 'Englisch',
+  fr: 'Französisch',
+  it: 'Italienisch',
+  pt: 'Portugiesisch',
+  none: 'Keine',
+};
+
+export const TRANSLATION_ADJECTIVES: Record<string, string> = {
+    es: 'spanische',
+    en: 'englische',
+    fr: 'französische',
+    it: 'italienische',
+    pt: 'portugiesische',
+};
 
 export const LEVELS: Record<LevelId, Level> = {
   A1: {

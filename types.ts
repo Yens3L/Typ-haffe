@@ -20,9 +20,11 @@ export interface TestStats {
   incorrectChars: number;
 }
 
+export type TranslationLanguage = 'es' | 'en' | 'fr' | 'it' | 'pt' | 'none';
+
 export interface GeneratedPhrase {
   german: string;
-  spanish: string;
+  translation: string;
 }
 
 export interface WPMDataPoint {
