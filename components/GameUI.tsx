@@ -13,7 +13,18 @@ interface GameUIProps {
   incorrectChars: number;
 }
 
-const GameUI: React.FC<GameUIProps> = ({ time, isInfiniteMode, wpm, accuracy, onTTS, onTranslate, isTranslationAvailable, onSkipSentence, correctChars, incorrectChars }) => {
+const GameUI: React.FC<GameUIProps> = ({
+  time,
+  isInfiniteMode,
+  wpm,
+  accuracy,
+  onTTS,
+  onTranslate,
+  isTranslationAvailable,
+  onSkipSentence,
+  correctChars,
+  incorrectChars,
+}) => {
   const showRealStats = correctChars > 0 || incorrectChars > 0;
   
   return (

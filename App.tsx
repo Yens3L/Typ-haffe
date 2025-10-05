@@ -18,51 +18,6 @@ const SENTENCE_COLORS = [
   'text-lime-300',
 ];
 
-const SOUNDS = {
-  correct: 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjQwLjEwMQAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIwAAHwAAB1VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV-A/AAAahANAAGSB//uGQ5FAv/zRFNxWADgAABlR1//uGBAf/4Sg5xwb/80RzEwA4AAA0gA//uGCgf/wShDBv/zRHMDAHAAAADSAIAABQMPBAOAY4AAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV-A/-A/AAA',
-  incorrect: 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjQwLjEwMQAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIwAAHwAAB1VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV-A/AAAahANAAGS//uGQ5FAv/zRFNxWADgAABlR1//uGBAf/4Sg5xwb/80RzEwA4AAA0gA//uGCgf/wShDBv/zRHMDAHAAAADSAIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV-A/AAA,',
-  space: 'data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU2LjQwLjEwMQAAAAAAAAAAAAAA//OEAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAAEAAABIwAAHwAAB1VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV-A/AAAahANAAGSB//uGQ5FAv/zRFNxWADgAABlR1//uGBAf/4Sg5xwb/80RzEwA4AAA0gA//uGCgf/wShDBv/zRHMDAHAAAADSAIAABQMPBAOAY4AAAABVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV-A/AAA'
-};
-type SoundType = keyof typeof SOUNDS;
-
-const SoundPlayer: React.FC = () => (
-    <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
-        {Object.entries(SOUNDS).map(([key, src]) => (
-            <audio key={key} id={`sound-${key}`} src={src} preload="auto" />
-        ))}
-    </div>
-);
-
-const useSound = (enabled: boolean) => {
-    const audioRefs = useRef<Record<SoundType, HTMLAudioElement | null>>({
-        correct: null,
-        incorrect: null,
-        space: null,
-    });
-
-    useEffect(() => {
-        audioRefs.current.correct = document.getElementById('sound-correct') as HTMLAudioElement;
-        audioRefs.current.incorrect = document.getElementById('sound-incorrect') as HTMLAudioElement;
-        audioRefs.current.space = document.getElementById('sound-space') as HTMLAudioElement;
-    }, []);
-
-    const playSound = useCallback((type: SoundType) => {
-        if (!enabled || (window.speechSynthesis && window.speechSynthesis.speaking)) {
-            return;
-        }
-
-        const audio = audioRefs.current[type];
-        if (audio) {
-            audio.currentTime = 0;
-            audio.volume = 0.3;
-            audio.play().catch(e => { /* Autoplay error is fine, will work after first interaction */ });
-        }
-    }, [enabled]);
-
-    return playSound;
-};
-
-
 function shuffle<T>(array: T[]): T[] {
   let currentIndex = array.length;
   const newArray = [...array];
@@ -73,6 +28,35 @@ function shuffle<T>(array: T[]): T[] {
   }
   return newArray;
 }
+
+function getPromptForLevel(levelId: LevelId, levelName: string, count: number): string {
+  const basePrompt = `Erstelle ${count} einzigartige, natürlich klingende deutsche Sätze für einen Tipptest. Jeder Satz muss genau dem GER-Niveau "${levelName}" entsprechen. Gib auch eine professionelle spanische Übersetzung für jeden Satz an. Die Sätze müssen grammatikalisch einwandfrei sein und eine abwechslungsreiche Satzstruktur sowie einen breiten, niveaugerechten Wortschatz aufweisen.`;
+
+  let levelSpecificInstructions = '';
+
+  switch (levelId) {
+    case 'A1':
+      levelSpecificInstructions = 'Fokus auf einfache Hauptsätze (Subjekt-Verb-Objekt), grundlegenden Wortschatz (Familie, Essen, Alltag) und Präsens. Die Sätze sollten kurz sein.';
+      break;
+    case 'A2':
+      levelSpecificInstructions = 'Integriere Konjunktionen wie "und", "aber", "weil". Verwende das Perfekt. Sätze können etwas länger sein und Themen wie Hobbys und Reisen behandeln.';
+      break;
+    case 'B1':
+      levelSpecificInstructions = 'Verwende Nebensätze mit "dass", "obwohl", "wenn". Nutze den Konjunktiv II für Wünsche. Wortschatz zu Meinungsäußerung, Arbeit und Umwelt.';
+      break;
+    case 'B2':
+      levelSpecificInstructions = 'Baue komplexere Satzgefüge mit Passivkonstruktionen und Genitivattributen. Der Wortschatz sollte differenziert sein und gesellschaftliche Themen abdecken.';
+      break;
+    case 'C1':
+      levelSpecificInstructions = 'Erstelle verschachtelte Sätze mit anspruchsvollen Konnektoren. Verwende idiomatische Wendungen und Fachvokabular. Der Stil kann formell oder akademisch sein.';
+      break;
+    case 'C2':
+      levelSpecificInstructions = 'Die Sätze sollen sehr komplex sein, mit seltenen grammatikalischen Strukturen und präzisem, abstraktem oder literarischem Vokabular. Nominalstil und Partizipialkonstruktionen sind erwünscht.';
+      break;
+  }
+  
+  return `${basePrompt} ${levelSpecificInstructions}`;
+};
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>(GameState.Ready);
@@ -120,19 +104,7 @@ const App: React.FC = () => {
   const [currentTranslation, setCurrentTranslation] = useState<string | null>(null);
   const [isSentenceTransitioning, setIsSentenceTransitioning] = useState(false);
   const [isTimerActive, setIsTimerActive] = useState(false);
-
-  const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(() => {
-    try {
-        const savedSound = localStorage.getItem('typAffe-sound');
-        return savedSound ? JSON.parse(savedSound) : true;
-    } catch (error) {
-        console.error("Could not read sound setting from localStorage", error);
-        return true;
-    }
-  });
   
-  const playSound = useSound(isSoundEnabled);
-
   const timerRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const isInfiniteMode = testDuration === 0;
@@ -153,14 +125,6 @@ const App: React.FC = () => {
     }
   }, [testDuration]);
 
-  useEffect(() => {
-    try {
-        localStorage.setItem('typAffe-sound', JSON.stringify(isSoundEnabled));
-    } catch (error) {
-        console.error("Could not save sound setting to localStorage", error);
-    }
-  }, [isSoundEnabled]);
-
   const startGame = useCallback(async () => {
     if (isGenerating) return;
 
@@ -180,9 +144,10 @@ const App: React.FC = () => {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const prompt = getPromptForLevel(currentLevelId, LEVELS[currentLevelId].name, PHRASE_COUNT);
             const response = await ai.models.generateContent({
                 model: "gemini-2.5-flash",
-                contents: `Erstelle ${PHRASE_COUNT} einzigartige deutsche Sätze für einen Tipptest auf dem GER-Niveau "${LEVELS[currentLevelId].name}". Gib auch eine professionelle spanische Übersetzung für jeden Satz an. Sorge dafür, dass die Sätze grammatisch korrekt sind und eine abwechslungsreiche Struktur haben.`,
+                contents: prompt,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: {
@@ -294,9 +259,61 @@ const App: React.FC = () => {
     }
   };
   
-  const handleToggleSound = () => {
-    setIsSoundEnabled(prev => !prev);
-  };
+  const submitWord = useCallback((typedWord: string) => {
+    if (gameState !== GameState.Playing || words.length === 0 || currentWordIndex >= words.length) {
+        return;
+    }
+
+    if (!isTimerActive) {
+        setIsTimerActive(true);
+        setCurrentTranslation(null);
+    }
+
+    const currentWord = words[currentWordIndex];
+    
+    const entry: WordHistoryEntry = { word: currentWord, typed: typedWord };
+    setWordHistory(prev => [...prev, entry]);
+    
+    // Unified stat calculation for the entire word.
+    let correctInWord = 0;
+    for (let i = 0; i < currentWord.length; i++) {
+        if (typedWord[i] === currentWord[i]) {
+            correctInWord++;
+        }
+    }
+    const incorrectInWord = (currentWord.length - correctInWord) + Math.max(0, typedWord.length - currentWord.length);
+
+    setStats(prev => ({
+        ...prev,
+        correctChars: prev.correctChars + correctInWord + 1, // +1 for the space
+        incorrectChars: prev.incorrectChars + incorrectInWord,
+    }));
+    
+    const isLastWordOfTest = currentWordIndex === words.length - 1;
+    if (isLastWordOfTest) {
+        setIsTimerActive(false);
+        setGameState(GameState.Finished);
+        // Final stats will be calculated in the useEffect for stats
+        return;
+    }
+    
+    const isLastWordOfSentence = wordSentenceMap[currentWordIndex] !== wordSentenceMap[currentWordIndex + 1];
+    if (isLastWordOfSentence) {
+        setIsTimerActive(false);
+        const sentenceIndex = wordSentenceMap[currentWordIndex];
+        if (sentenceIndex !== undefined) {
+            const phrase = activePhrases[sentenceIndex];
+            if (phrase && phrase.spanish) {
+                setCurrentTranslation(phrase.spanish);
+            }
+        }
+        setIsSentenceTransitioning(true);
+        setTimeout(() => setIsSentenceTransitioning(false), 600);
+    }
+
+    setCurrentWordIndex(prev => prev + 1);
+    setUserInput('');
+  }, [gameState, words, currentWordIndex, wordSentenceMap, activePhrases, isTimerActive]);
 
   useEffect(() => {
     if (gameState !== GameState.Playing) {
@@ -325,7 +342,7 @@ const App: React.FC = () => {
   }, [gameState, isTimerActive, isInfiniteMode]);
 
   useEffect(() => {
-    if (!isInfiniteMode && timeLeft <= 0 && gameState === GameState.Playing) {
+    if ((!isInfiniteMode && timeLeft <= 0 && gameState === GameState.Playing) || (gameState === GameState.Finished)) {
       setIsTimerActive(false);
       
       const incorrectWords = wordHistory
@@ -365,89 +382,16 @@ const App: React.FC = () => {
     }
 
     const newValue = e.target.value;
-    const currentWord = words[currentWordIndex];
 
     if (newValue.endsWith(' ')) {
         const typedWord = newValue.trim();
-        if (!typedWord) return; 
-
-        playSound('space');
-        
-        const entry: WordHistoryEntry = { word: currentWord, typed: typedWord };
-        setWordHistory(prev => [...prev, entry]);
-        
-        const missedChars = Math.max(0, currentWord.length - typedWord.length);
-        if (missedChars > 0) {
-            setStats(prev => ({...prev, incorrectChars: prev.incorrectChars + missedChars }));
-        }
-        
-        if (typedWord === currentWord) {
-            setStats(prev => ({...prev, correctChars: prev.correctChars + 1}));
-        }
-        
-        const isLastWordOfTest = currentWordIndex === words.length - 1;
-        if (isLastWordOfTest) {
-            setIsTimerActive(false);
-            const finalWordHistory = [...wordHistory, entry];
-            const incorrectWords = finalWordHistory
-                .filter(w => w.typed !== w.word)
-                .map(w => w.word);
-            setDifficultWords([...new Set(incorrectWords)]);
-            
-            setGameState(GameState.Finished);
-            setFinalStats(stats);
-            return;
-        }
-        
-        const isLastWordOfSentence = wordSentenceMap[currentWordIndex] !== wordSentenceMap[currentWordIndex + 1];
-        if (isLastWordOfSentence) {
-            setIsTimerActive(false);
-            const sentenceIndex = wordSentenceMap[currentWordIndex];
-            if (sentenceIndex !== undefined) {
-                const phrase = activePhrases[sentenceIndex];
-                if (phrase && phrase.spanish) {
-                    setCurrentTranslation(phrase.spanish);
-                }
-            }
-            setIsSentenceTransitioning(true);
-            setTimeout(() => {
-                setIsSentenceTransitioning(false);
-            }, 600);
-        }
-
-        setCurrentWordIndex(prev => prev + 1);
-        setUserInput('');
+        if (!typedWord) return;
+        submitWord(typedWord);
         return;
-    }
-
-    if (newValue.length > userInput.length) {
-        const addedChar = newValue[newValue.length - 1];
-        const isCorrect = currentWord[newValue.length - 1] === addedChar;
-        playSound(isCorrect ? 'correct' : 'incorrect');
-        if (isCorrect) {
-            setStats(prev => ({...prev, correctChars: prev.correctChars + 1}));
-        } else {
-            setStats(prev => ({...prev, incorrectChars: prev.incorrectChars + 1}));
-        }
-    }
-    else if (newValue.length < userInput.length) {
-        const lastCharIndex = userInput.length - 1;
-        const wasExtra = lastCharIndex >= currentWord.length;
-
-        if (wasExtra) {
-            setStats(prev => ({ ...prev, incorrectChars: prev.incorrectChars - 1 }));
-        } else {
-            const wasCorrect = userInput[lastCharIndex] === currentWord[lastCharIndex];
-            if (wasCorrect) {
-                setStats(prev => ({ ...prev, correctChars: prev.correctChars - 1 }));
-            } else {
-                setStats(prev => ({ ...prev, incorrectChars: prev.incorrectChars - 1 }));
-            }
-        }
     }
     
     setUserInput(newValue);
-  }, [gameState, userInput, words, currentWordIndex, wordSentenceMap, stats, wordHistory, activePhrases, isTimerActive, playSound]);
+  }, [gameState, words, isTimerActive, submitWord]);
 
   const handleTTS = useCallback(() => {
     if (gameState !== GameState.Playing || !('speechSynthesis' in window)) return;
@@ -500,12 +444,9 @@ const App: React.FC = () => {
 
   return (
     <main className="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 selection:bg-yellow-500/50">
-      <SoundPlayer />
       <Header 
         onRestart={restartGame} 
         onFullScreen={toggleFullScreen} 
-        isSoundEnabled={isSoundEnabled}
-        onToggleSound={handleToggleSound}
       />
       <div className="relative w-full flex flex-col items-center justify-center pt-16">
 
