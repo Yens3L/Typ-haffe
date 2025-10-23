@@ -85,6 +85,19 @@
       .animate-fade-in {
         animation: fade-in 300ms ease-out;
       }
+      @keyframes pulse-listening {
+        0%, 100% {
+          transform: scale(1);
+          opacity: 0.5;
+        }
+        50% {
+          transform: scale(1.3);
+          opacity: 1;
+        }
+      }
+      .animate-pulse-listening {
+        animation: pulse-listening 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
     </style>
   <script type="importmap">
 {

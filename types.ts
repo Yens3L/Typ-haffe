@@ -41,3 +41,9 @@ export interface WordHistoryEntry {
   word: string;
   typed: string;
 }
+
+export interface TranscriptEntry {
+  speaker: 'user' | 'model';
+  text: string;
+  isFinal: boolean;
+}

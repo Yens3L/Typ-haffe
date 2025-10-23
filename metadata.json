@@ -1,5 +1,7 @@
 {
   "name": "Typ-Affe: German Typing Test",
   "description": "A Monkeytype-inspired web application to test and improve your German typing speed and accuracy. Choose a level and duration, and see your WPM and accuracy in real-time!",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

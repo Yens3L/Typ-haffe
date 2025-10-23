@@ -19,6 +19,8 @@ interface GameOverlayProps {
   accuracyHistory: AccuracyDataPoint[];
   difficultWords: string[];
   loadingProgress: number;
+  appMode: 'typing' | 'conversation';
+  onModeChange: (mode: 'typing' | 'conversation') => void;
 }
 
 const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'wpmHistory' | 'accuracyHistory' | 'difficultWords' | 'onRestart'>> = ({
@@ -30,6 +32,8 @@ const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'wpmH
   onDurationSelect,
   isGenerating,
   loadingProgress,
+  appMode,
+  onModeChange,
 }) => {
   const levelKeys = Object.keys(levels) as LevelId[];
 
@@ -38,52 +42,80 @@ const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'wpmH
       <h2 className="text-4xl md:text-5xl font-bold font-orbitron mb-4 text-yellow-300">
         Typ-Affe
       </h2>
-      <p className="text-slate-300 mb-8 max-w-md mx-auto text-lg">
-        Wähle ein Level und eine Dauer, um deinen Tipptest zu starten.
-      </p>
-
-      <div className="mb-6">
-        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-3">Dauer</h3>
-        <div className="flex justify-center flex-wrap gap-3 sm:gap-4">
-          {TEST_DURATIONS.map((duration) => (
-            <button
-              key={duration}
-              onClick={() => onDurationSelect(duration)}
-              disabled={isGenerating}
-              className={`font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 ease-in-out transform focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                duration === selectedDuration
-                  ? 'bg-cyan-400 text-slate-900 ring-cyan-300 scale-105'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600 ring-slate-500'
-              }`}
-            >
-              {duration === 0 ? 'Übung' : `${duration}s`}
-            </button>
-          ))}
-        </div>
+      
+      <div className="flex justify-center mb-8 border-b border-slate-700">
+        <button
+          onClick={() => onModeChange('typing')}
+          disabled={isGenerating}
+          className={`px-6 py-3 text-lg font-bold transition-colors disabled:opacity-50 ${
+            appMode === 'typing' ? 'text-cyan-300 border-b-2 border-cyan-300' : 'text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          Tipptest
+        </button>
+        <button
+          onClick={() => onModeChange('conversation')}
+          disabled={isGenerating}
+          className={`px-6 py-3 text-lg font-bold transition-colors disabled:opacity-50 ${
+            appMode === 'conversation' ? 'text-cyan-300 border-b-2 border-cyan-300' : 'text-slate-500 hover:text-slate-300'
+          }`}
+        >
+          Gespräch
+        </button>
       </div>
 
-       <div className="mb-8">
-        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-3">Level</h3>
-        <div className="flex justify-center flex-wrap gap-3 sm:gap-4">
-          {levelKeys.map((levelId) => (
-            <button
-              key={levelId}
-              onClick={() => onLevelSelect(levelId)}
-              disabled={isGenerating}
-              className={`font-bold py-2 px-4 rounded-lg text-base transition-all duration-200 ease-in-out transform focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                levelId === selectedLevel
-                  ? 'bg-cyan-400 text-slate-900 ring-cyan-300 scale-105'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600 ring-slate-500'
-              }`}
-            >
-              {levels[levelId].name}
-            </button>
-          ))}
-        </div>
-      </div>
+      {appMode === 'typing' ? (
+        <>
+          <p className="text-slate-300 mb-8 max-w-md mx-auto text-lg">
+            Wähle ein Level und eine Dauer, um deinen Tipptest zu starten.
+          </p>
+          <div className="mb-6">
+            <h3 className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-3">Dauer</h3>
+            <div className="flex justify-center flex-wrap gap-3 sm:gap-4">
+              {TEST_DURATIONS.map((duration) => (
+                <button
+                  key={duration}
+                  onClick={() => onDurationSelect(duration)}
+                  disabled={isGenerating}
+                  className={`font-bold py-2 px-6 rounded-lg text-lg transition-all duration-200 ease-in-out transform focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    duration === selectedDuration
+                      ? 'bg-cyan-400 text-slate-900 ring-cyan-300 scale-105'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600 ring-slate-500'
+                  }`}
+                >
+                  {duration === 0 ? 'Übung' : `${duration}s`}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mb-8">
+            <h3 className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-3">Level</h3>
+            <div className="flex justify-center flex-wrap gap-3 sm:gap-4">
+              {levelKeys.map((levelId) => (
+                <button
+                  key={levelId}
+                  onClick={() => onLevelSelect(levelId)}
+                  disabled={isGenerating}
+                  className={`font-bold py-2 px-4 rounded-lg text-base transition-all duration-200 ease-in-out transform focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    levelId === selectedLevel
+                      ? 'bg-cyan-400 text-slate-900 ring-cyan-300 scale-105'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600 ring-slate-500'
+                  }`}
+                >
+                  {levels[levelId].name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+         <p className="text-slate-300 mb-8 max-w-md mx-auto text-lg min-h-[174px] flex items-center">
+            Führe ein Gespräch mit der KI, um dein gesprochenes Deutsch zu üben.
+          </p>
+      )}
       
       <div className="flex items-center justify-center gap-4 min-h-[68px]">
-        {isGenerating ? (
+        {isGenerating && appMode === 'typing' ? (
           <div className="text-center w-full">
             <p className="text-slate-300 mb-2 text-lg">Sätze werden geladen...</p>
             <div className="loading-bar">
@@ -93,9 +125,10 @@ const StartScreen: React.FC<Omit<GameOverlayProps, 'gameState' | 'stats' | 'wpmH
         ) : (
           <button
             onClick={onStart}
-            className="bg-yellow-400 text-slate-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-300 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-500/50"
+            disabled={isGenerating}
+            className="bg-yellow-400 text-slate-900 font-bold py-3 px-8 rounded-lg text-xl hover:bg-yellow-300 transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Start
+            {appMode === 'typing' ? 'Start' : 'Gespräch beginnen'}
           </button>
         )}
       </div>

@@ -6,6 +6,7 @@ import GameOverlay from './components/GameOverlay';
 import GameUI from './components/GameUI';
 import Header from './components/Header';
 import AboutOverlay from './components/AboutOverlay';
+import ConversationUI from './components/ConversationUI';
 import { GoogleGenAI, Type } from "@google/genai";
 
 const PHRASE_COUNT = 25;
@@ -64,6 +65,7 @@ function getPromptForLevel(levelId: LevelId, levelName: string, count: number, l
 };
 
 const App: React.FC = () => {
+  const [appMode, setAppMode] = useState<'typing' | 'conversation'>('typing');
   const [gameState, setGameState] = useState<GameState>(GameState.Ready);
   const [words, setWords] = useState<string[]>([]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
@@ -149,7 +151,7 @@ const App: React.FC = () => {
   }, [translationLanguage]);
 
 
-  const startGame = useCallback(async () => {
+  const startTypingGame = useCallback(async () => {
     if (isGenerating) return;
 
     setIsGenerating(true);
@@ -267,6 +269,7 @@ const App: React.FC = () => {
      setWordHistory([]);
      setDifficultWords([]);
      setIsTimerActive(false);
+     setFinalStats(null);
   }, [testDuration]);
 
   const toggleFullScreen = () => {
@@ -371,7 +374,7 @@ const App: React.FC = () => {
   }, [timeLeft, gameState, stats, isInfiniteMode, wordHistory]);
   
   useEffect(() => {
-    if (gameState !== GameState.Playing) return;
+    if (gameState !== GameState.Playing || appMode !== 'typing') return;
 
     const totalChars = stats.correctChars + stats.incorrectChars;
     const accuracy = totalChars > 0 ? Math.round((stats.correctChars / totalChars) * 100) : 0;
@@ -385,7 +388,7 @@ const App: React.FC = () => {
         setAccuracyHistory(prevHistory => [...prevHistory, { time: elapsedTime, accuracy }]);
     }
 
-  }, [stats.correctChars, stats.incorrectChars, elapsedTime, gameState]);
+  }, [stats.correctChars, stats.incorrectChars, elapsedTime, gameState, appMode]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (gameState !== GameState.Playing || words.length === 0) return;
@@ -445,6 +448,18 @@ const App: React.FC = () => {
   const currentSentenceIndex = wordSentenceMap[currentWordIndex];
   const currentPhrase = activePhrases[currentSentenceIndex];
   const translationToShow = (gameState === GameState.Playing && currentPhrase && currentPhrase.translation && translationLanguage !== 'none') ? currentPhrase.translation : null;
+  
+  const handleStart = appMode === 'typing' ? startTypingGame : () => setGameState(GameState.Playing);
+
+  const handleModeChange = (mode: 'typing' | 'conversation') => {
+    setAppMode(mode);
+    restartGame();
+  };
+  
+  const handleExitConversation = () => {
+    setAppMode('typing');
+    restartGame();
+  }
 
   return (
     <main className="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 selection:bg-yellow-500/50">
@@ -463,93 +478,101 @@ const App: React.FC = () => {
                 className="absolute top-0 bottom-0 right-0 px-4 py-3"
                 aria-label="Fehlermeldung schließen"
             >
-                <svg className="fill-current h-6 w-6 text-amber-200/70 hover:text-amber-100" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Schließen</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
+                <svg className="fill-current h-6 w-6 text-amber-200/70 hover:text-amber-100" role="button" xmlns="http://www.w.org/2000/svg" viewBox="0 0 20 20"><title>Schließen</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
             </button>
           </div>
         )}
         
-        {gameState === GameState.Playing && (
-            <>
-                <h1 className="text-5xl md:text-6xl font-bold font-orbitron text-yellow-300 tracking-wider mb-8">
-                    Typ-Affe
-                </h1>
-                <GameUI 
-                    time={timeForUI} 
-                    isInfiniteMode={isInfiniteMode} 
-                    wpm={stats.wpm} 
-                    accuracy={stats.accuracy} 
-                    onTTS={handleTTS}
-                    onSkipSentence={handleSkipSentence}
-                    correctChars={stats.correctChars}
-                    incorrectChars={stats.incorrectChars}
+        {appMode === 'conversation' && gameState === GameState.Playing ? (
+          <ConversationUI onExit={handleExitConversation} />
+        ) : (
+          <>
+            {gameState === GameState.Playing && (
+                <>
+                    <h1 className="text-5xl md:text-6xl font-bold font-orbitron text-yellow-300 tracking-wider mb-8">
+                        Typ-Affe
+                    </h1>
+                    <GameUI 
+                        time={timeForUI} 
+                        isInfiniteMode={isInfiniteMode} 
+                        wpm={stats.wpm} 
+                        accuracy={stats.accuracy} 
+                        onTTS={handleTTS}
+                        onSkipSentence={handleSkipSentence}
+                        correctChars={stats.correctChars}
+                        incorrectChars={stats.incorrectChars}
+                    />
+                </>
+            )}
+            
+            <div 
+              className="relative w-full min-h-[10rem] flex flex-col items-center justify-center cursor-text px-4"
+              onClick={() => inputRef.current?.focus()}
+              aria-label="Typing area, click to focus"
+            >
+              {gameState === GameState.Playing ? (
+                <WordDisplay 
+                  words={words} 
+                  currentWordIndex={currentWordIndex} 
+                  userInput={userInput}
+                  isSentenceTransitioning={isSentenceTransitioning}
+                  wordSentenceMap={wordSentenceMap}
+                  sentenceColors={SENTENCE_COLORS}
                 />
-            </>
-        )}
-        
-        <div 
-          className="relative w-full min-h-[10rem] flex flex-col items-center justify-center cursor-text px-4"
-          onClick={() => inputRef.current?.focus()}
-          aria-label="Typing area, click to focus"
-        >
-          {gameState === GameState.Playing ? (
-            <WordDisplay 
-              words={words} 
-              currentWordIndex={currentWordIndex} 
-              userInput={userInput}
-              isSentenceTransitioning={isSentenceTransitioning}
-              wordSentenceMap={wordSentenceMap}
-              sentenceColors={SENTENCE_COLORS}
-            />
-          ) : (
-             <div className="text-slate-500 text-2xl min-h-36 flex items-center">Konfiguriere deinen Test, um zu beginnen</div>
-          )}
-          
-          <input
-              ref={inputRef}
-              type="text"
-              className="absolute inset-0 w-full h-full bg-transparent border-none outline-none p-0 text-transparent caret-transparent cursor-text"
-              value={userInput}
-              onChange={handleInputChange}
-              disabled={gameState !== GameState.Playing}
-              autoFocus
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
-          />
-        </div>
-        
-        {gameState === GameState.Playing && (
-          <div className="mt-4 p-4 bg-slate-800/60 rounded-lg w-full max-w-3xl text-center border border-slate-700/80 min-h-[7rem] flex flex-col justify-center items-center">
-            <div className="flex justify-center items-center gap-3 mb-3">
-              <label htmlFor="lang-select" className="text-slate-400 text-sm font-bold uppercase tracking-wider">Übersetzung</label>
-              <select
-                id="lang-select"
-                value={translationLanguage}
-                onChange={(e) => setTranslationLanguage(e.target.value as TranslationLanguage)}
-                className="bg-slate-700 border border-slate-600 text-slate-300 text-sm rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 p-1 appearance-none text-center"
-                style={{backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2rem' }}
-              >
-                {Object.entries(TRANSLATION_LANGUAGES).map(([code, name]) => (
-                  <option key={code} value={code}>{name}</option>
-                ))}
-              </select>
-            </div>
-            {translationLanguage !== 'none' ? (
-                <p className="text-cyan-300 text-lg italic px-4 min-h-7 flex items-center justify-center">
-                  {translationToShow || '...'}
-                </p>
               ) : (
-                <p className="text-slate-500 text-lg italic">Übersetzung ist deaktiviert.</p>
-              )
-            }
-          </div>
+                 <div className="text-slate-500 text-2xl min-h-36 flex items-center">
+                   {appMode === 'typing' ? 'Konfiguriere deinen Test, um zu beginnen' : 'Bereit für ein Gespräch?'}
+                 </div>
+              )}
+              
+              <input
+                  ref={inputRef}
+                  type="text"
+                  className="absolute inset-0 w-full h-full bg-transparent border-none outline-none p-0 text-transparent caret-transparent cursor-text"
+                  value={userInput}
+                  onChange={handleInputChange}
+                  disabled={gameState !== GameState.Playing}
+                  autoFocus
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+              />
+            </div>
+            
+            {gameState === GameState.Playing && (
+              <div className="mt-4 p-4 bg-slate-800/60 rounded-lg w-full max-w-3xl text-center border border-slate-700/80 min-h-[7rem] flex flex-col justify-center items-center">
+                <div className="flex justify-center items-center gap-3 mb-3">
+                  <label htmlFor="lang-select" className="text-slate-400 text-sm font-bold uppercase tracking-wider">Übersetzung</label>
+                  <select
+                    id="lang-select"
+                    value={translationLanguage}
+                    onChange={(e) => setTranslationLanguage(e.target.value as TranslationLanguage)}
+                    className="bg-slate-700 border border-slate-600 text-slate-300 text-sm rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 p-1 appearance-none text-center"
+                    style={{backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em', paddingRight: '2rem' }}
+                  >
+                    {Object.entries(TRANSLATION_LANGUAGES).map(([code, name]) => (
+                      <option key={code} value={code}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+                {translationLanguage !== 'none' ? (
+                    <p className="text-cyan-300 text-lg italic px-4 min-h-7 flex items-center justify-center">
+                      {translationToShow || '...'}
+                    </p>
+                  ) : (
+                    <p className="text-slate-500 text-lg italic">Übersetzung ist deaktiviert.</p>
+                  )
+                }
+              </div>
+            )}
+        </>
         )}
 
         {(gameState === GameState.Ready || gameState === GameState.Finished) && (
           <GameOverlay 
             gameState={gameState}
-            onStart={startGame}
+            onStart={handleStart}
             onRestart={restartGame}
             levels={LEVELS}
             selectedLevel={currentLevelId}
@@ -562,6 +585,8 @@ const App: React.FC = () => {
             accuracyHistory={accuracyHistory}
             difficultWords={difficultWords}
             loadingProgress={loadingProgress}
+            appMode={appMode}
+            onModeChange={handleModeChange}
           />
         )}
 
