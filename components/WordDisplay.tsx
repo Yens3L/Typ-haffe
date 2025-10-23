@@ -30,8 +30,8 @@ const Word: React.FC<{
       aria-label={`Aussprache für ${text}`}
       className="absolute -right-5 top-1/2 -translate-y-1/2 text-current hover:text-cyan-300 transition-opacity opacity-0 group-hover:opacity-100 focus:opacity-100 z-10"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M11.25 8.25l-4.72 4.72a.75.75 0 000 1.06l4.72 4.72M11.25 8.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25H11.25l4.72 4.72a.75.75 0 001.28-.53V4.03a.75.75 0 00-1.28-.53l-4.72 4.72z" />
       </svg>
     </button>
   );
@@ -59,7 +59,7 @@ const Word: React.FC<{
 
         let charColorClass = ''; // Inherit color from parent by default
         if (isTyped) {
-          charColorClass = isCorrect ? 'text-cyan-300' : 'text-red-500 underline decoration-2';
+          charColorClass = isCorrect ? 'text-cyan-300' : 'bg-red-500/40 text-red-300';
         }
 
         const cursorClass = isCursor ? 'border-l-2 border-yellow-400 animate-blink -ml-0.5' : '';
@@ -78,7 +78,7 @@ const Word: React.FC<{
 
       {/* Extra characters typed by the user, shown after the word and cursor */}
       {typedChars.length > wordChars.length && (
-          <span className="text-red-500 underline decoration-2 bg-red-500/10">
+          <span className="bg-red-500/40 text-red-300 rounded-sm">
               {typedChars.slice(wordChars.length).join('')}
           </span>
       )}

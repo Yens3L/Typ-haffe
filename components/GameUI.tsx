@@ -35,9 +35,8 @@ const GameUI: React.FC<GameUIProps> = ({
           <span className="text-lg ml-1 text-slate-400">s</span>
         </div>
         <div className="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-7 w-7 fill-current">
-                <path d="M12 2L2 12l2.828 2.828L12 7.657l7.172 7.171L22 12 12 2z" />
-                <path d="M14.828 14.828L12 17.657l-7.172-7.171L2 12l10 10 10-10-2.828-2.828z" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25z" />
             </svg>
             <div className="flex items-baseline">
                 <span className="text-4xl">{wpm}</span>
@@ -55,8 +54,8 @@ const GameUI: React.FC<GameUIProps> = ({
             aria-label="Satz vorlesen"
             className="text-slate-500 hover:text-cyan-300 transition-colors duration-200"
         >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M11.25 8.25l-4.72 4.72a.75.75 0 000 1.06l4.72 4.72M11.25 8.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25H11.25l4.72 4.72a.75.75 0 001.28-.53V4.03a.75.75 0 00-1.28-.53l-4.72 4.72z" />
             </svg>
         </button>
         <button
@@ -64,8 +63,8 @@ const GameUI: React.FC<GameUIProps> = ({
             aria-label="Satz überspringen"
             className="text-slate-500 hover:text-cyan-300 transition-colors duration-200"
         >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5" />
             </svg>
         </button>
       </div>
